@@ -1,0 +1,18 @@
+[package]
+name = "warp"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+opt-level = "s"     # Optimize for size.
+lto = true          # Enable Link Time Optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations.
+panic = "abort"     # Abort on panic
+strip = true        # Automatically strip symbols from the binary.
+
+[dependencies]
+clap = { version = "4.0.29", features = ["derive"] }
+toml = "0.5.10"
+serde = { version = "1.0.151", default-features = false, features = [ "derive" ] }
+thiserror = "1.0.38"
+regex = "1.7.0"
