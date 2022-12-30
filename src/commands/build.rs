@@ -6,6 +6,7 @@ use crate::{error::WarpError, executable::Executable};
 
 #[derive(Args)]
 pub struct BuildCommand {
+    /// Build for production with 'workspace-optimizer' docker image
     #[arg(default_value_t = false, short, long)]
     pub optimized: bool,
 }

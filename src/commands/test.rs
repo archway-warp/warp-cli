@@ -8,8 +8,10 @@ use super::{node::NodeCommand, BuildCommand};
 
 #[derive(Args)]
 pub struct TestCommand {
+    /// Rebuild the contracts before running tests
     #[arg(default_value_t = false, short, long)]
     pub rebuild: bool,
+    /// Don't start a new instance of localsecret for this testing session
     #[arg(default_value_t = false, short, long)]
     pub skip_environment: bool,
 }
