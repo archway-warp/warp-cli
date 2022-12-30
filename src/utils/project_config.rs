@@ -7,27 +7,27 @@ use crate::error::WarpError;
 
 pub const CONFIG_FILENAME: &str = "Warp.toml";
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ProjectConfig {
     pub tests: TestConfig,
     pub autodeploy: AutoDeploy,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct TestConfig {
     pub node_setup_time: u16,
     pub test_container_name: String,
     pub persist_image: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AutoDeploy {
     pub account_id: String,
     pub make_labels_unique: bool,
     pub steps: Vec<AutoDeployStep>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AutoDeployStep {
     pub id: String,
     pub contract: String,

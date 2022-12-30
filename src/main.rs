@@ -2,6 +2,7 @@ mod commands;
 mod consts;
 mod error;
 mod executable;
+mod secretcli;
 mod utils;
 
 use clap::{command, Parser, Subcommand};
@@ -42,13 +43,16 @@ fn main() -> Result<(), WarpError> {
 
     // You can check for the existence of subcommands, and if found use their
     // matches just as you would the top level cmd
-    match &cli.command {
+    let error = match &cli.command {
         Commands::Deploy(x) => x.execute(),
         Commands::Init(x) => x.execute(),
         Commands::New(x) => x.execute(),
         Commands::Build(x) => x.execute(),
         Commands::Test(x) => x.execute(),
         Commands::Node(x) => x.execute(),
-    }?;
+    };
+    if let Err(x) = error {
+        return Err(x);
+    }
     Ok(())
 }

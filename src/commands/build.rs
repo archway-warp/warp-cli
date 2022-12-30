@@ -13,7 +13,7 @@ pub struct BuildCommand {
 impl Executable for BuildCommand {
     fn execute(&self) -> Result<(), WarpError> {
         if self.optimized {
-            let cmd_str = format!("docker run --rm -v \"{0}\":/code --mount type=volume,source={1}_cache\",target=/code/target --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry cosmwasm/workspace-optimizer:0.12.10", 
+            let cmd_str = format!("docker run --rm -v {0}:/code --mount type=volume,source={1}_cache,target=/code/target --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry cosmwasm/workspace-optimizer:0.12.10", 
                 env::current_dir()?.to_str().unwrap(),
                 env::current_dir()?.to_str().unwrap().rsplit("/").next().unwrap());
             let cmd_tokens = cmd_str.split(" ").collect::<Vec<&str>>();
