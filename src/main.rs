@@ -12,7 +12,6 @@ use commands::{
 };
 use error::WarpError;
 use executable::Executable;
-use std::process::ExitStatus;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]

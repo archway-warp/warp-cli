@@ -1,6 +1,6 @@
-use std::{path::PathBuf, process::Command, time::Duration};
+use std::{process::Command, time::Duration};
 
-use clap::{Arg, Args};
+use clap::Args;
 
 use crate::{error::WarpError, executable::Executable, utils::project_config::ProjectConfig};
 
@@ -39,7 +39,7 @@ impl Executable for TestCommand {
                 Ok(_) => false,
                 Err(x) => {
                     println!("{:?}", x);
-                    if let WarpError::NodeStartupError(x) = x {
+                    if let WarpError::NodeStartupError(_x) = x {
                         // TODO: For now we're assuming we got conflict. We should explicitly check in the future.
                         println!("Possible container conflict.");
                         true

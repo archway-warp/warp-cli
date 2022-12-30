@@ -1,14 +1,9 @@
-use std::{
-    fs::File,
-    io::Write,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{fs::File, io::Write, path::Path};
 
 use crate::{
     error::WarpError,
     executable::Executable,
-    utils::{self, project_config::ProjectConfig},
+    utils::project_config::{AutoDeployStep, ProjectConfig},
 };
 use clap::Args;
 use regex::Regex;
@@ -18,11 +13,14 @@ pub struct NewCommand {
     //#[arg(short, long)]
     /// The name of the new contract
     pub name: String,
+    /// Customize contract label
+    #[arg(short, long)]
+    pub label: Option<String>,
 }
 
 impl Executable for NewCommand {
     fn execute(&self) -> Result<(), WarpError> {
-        let (root, config) = ProjectConfig::parse_project_config()?;
+        let (root, mut config) = ProjectConfig::parse_project_config()?;
         let contract_name = Self::optimize_for_path(&self.name)?;
         let contract_dir = root.join("contracts").join(&contract_name);
         std::fs::create_dir_all(contract_dir.clone())?;
@@ -40,6 +38,7 @@ impl Executable for NewCommand {
         }
 
         std::fs::remove_dir_all(contract_dir.clone().join(".git"))?;
+        std::fs::remove_file(contract_dir.clone().join("README.md"))?;
         let cargo_path = contract_dir.clone().join("Cargo.toml");
         Self::replace_in_file(cargo_path, "<CONTRACT_NAME>", &contract_name)?;
 
@@ -63,6 +62,15 @@ impl Executable for NewCommand {
         let mut lib_file = File::options().write(true).append(true).open(lib_path)?;
         writeln!(&mut lib_file, "pub mod {};", &contract_name)?;
 
+        let deploy_step = AutoDeployStep {
+            id: format!("$_{}", &self.name),
+            contract: format!("artifacts/{}.wasm", &self.name),
+            label: self.label.as_ref().unwrap_or(&self.name).to_string(),
+            init_msg: "{ \"owner\": \"$account_id\", \"message\": \"\" }".to_owned(),
+            coins: None,
+        };
+        config.autodeploy.steps.push(deploy_step);
+        config.save_project_config()?;
         Ok(())
     }
 }
@@ -86,7 +94,7 @@ impl NewCommand {
     }
 }
 mod tests {
-    use super::NewCommand;
+    use crate::commands::new::NewCommand;
 
     #[test]
     fn path_test() {

@@ -1,4 +1,4 @@
-use std::{fs::File, process::Command};
+use std::process::Command;
 
 use crate::{error::WarpError, executable::Executable, utils};
 use clap::Args;
@@ -22,7 +22,8 @@ impl Executable for InitCommand {
         if cmd.success() {
             utils::project_config::ProjectConfig::generate_and_save(dir)?;
             Ok(())
+        } else {
+            Err(WarpError::InitFailed)
         }
-        else { Err(WarpError::InitFailed) }
     }
 }

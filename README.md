@@ -6,7 +6,7 @@
 
 This tool was built to support the current toolstack, so everything you'd normally need for developing smart contracts is still required:
 
-- Rust 1.60+,
+- Rust 1.50+,
 - SecretCLI
 - Node & Npm if you want to run tests,
 - Docker for building contracts and running the node
@@ -15,13 +15,17 @@ I am planning on reducing this list in the future, but it's not a priority right
 
 # Installation
 
-For now, the main way to get the Warp CLI tool is to build it from the `main` branch of the Github repo:
+You can build the binary from the main branch of this repo:
 
 ```
 cargo install --git https://github.com/secret-warp/warp-cli.git
 ```
 
-Soon, once the PoC version is finalized, a binary will be available in the Releases section.
+Alternatively, there's also a crates.io option
+
+```
+cargo install warp-cli
+```
 
 # Usage
 
@@ -131,8 +135,25 @@ init_msg = '{ "acl": "$_acl", "system": "$_system", "owner": "$account_id" }'
 label = 'Dapp: Factory'
 ```
 
+## What about frontend?
+
+It is not included as of right now. I am not a frontend developer, and as such, I can't hold opinions on what's comfortable to use in the frontend world. In the future there will be options available to include various frontends through the CLI.
+
 # Roadmap
 
 The tool works, but it certainly can't be considered "stable". So, in addition to adding some killer features, there is a lot of refactoring and bugfixing to be done. Please report any issues you find!
+
+## Long-term goals
+
+Please keep in mind that at this early stage plans can still change quite a lot, depending on what features are needed the most. This is more of a guideline at the moment.
+
+- Improve the user experience - fix bugs and eliminate/decrease awkward wait times
+- Add support for scaffolding various frontend templates
+- Add support for templates in general - contractt templates for different versions of `cosmwasm`, or preconfigured SNIP standard contracts (`warp new main_token -t snip20-staking`?)
+- Find out a way to automate schema generation for contract messages as much as possible
+- Make interfacing with dockerized `localsecret` less verbose - `docker exec -it secretdev secret cli blah blah`
+- Write a proper documentation
+- Automate the `localsecret` node configuration to reduce block time for testing purposes
+- Possibly remove the dependency on locally installed `secretcli` for a more 'portable' setup that works out of the box
 
 #TODO: Actually write down a detailed roadmap

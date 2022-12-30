@@ -1,8 +1,7 @@
-use std::process::{Command, ExitStatus};
+use std::process::{Command};
 
-use super::BuildCommand;
 use crate::{error::WarpError, executable::Executable, utils::project_config::ProjectConfig};
-use clap::{Args, Subcommand};
+use clap::{Args};
 
 #[derive(Args)]
 pub struct NodeCommand {
@@ -16,7 +15,7 @@ pub struct NodeCommand {
 
 impl Executable for NodeCommand {
     fn execute(&self) -> Result<(), WarpError> {
-        let (root_path, config) = ProjectConfig::parse_project_config()?;
+        let (_root_path, config) = ProjectConfig::parse_project_config()?;
         let cmd_str = format!("docker run -it -p 9091:9091 -p 26657:26657 -p 26656:26656 -p 1317:1317 -p 5000:5000 -v {0}:/root/code --name {1} ghcr.io/scrtlabs/localsecret:v1.5.1",
             std::env::current_dir()?.to_str().unwrap(), 
             self.container.clone().unwrap_or_else(|| config.tests.test_container_name)

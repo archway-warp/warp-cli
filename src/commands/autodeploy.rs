@@ -1,8 +1,6 @@
 use std::{
     collections::BTreeMap,
-    fs::File,
-    io::{Read, Write},
-    path::PathBuf,
+    io::Write,
     process::{Command, Output, Stdio},
     time::Duration,
 };
@@ -11,10 +9,7 @@ use crate::{
     error::WarpError,
     executable::Executable,
     secretcli::{keys_show::KeysShowResponse, tx_query::TxQueryResponse},
-    utils::{
-        self,
-        project_config::{AutoDeployStep, ProjectConfig},
-    },
+    utils::project_config::{AutoDeployStep, ProjectConfig},
 };
 use clap::Args;
 
@@ -27,7 +22,7 @@ pub struct AutoDeployCommand {
 
 impl Executable for AutoDeployCommand {
     fn execute(&self) -> Result<(), WarpError> {
-        let (root, config) = ProjectConfig::parse_project_config()?;
+        let (_root, config) = ProjectConfig::parse_project_config()?;
 
         let password =
             rpassword::prompt_password("Enter your keyring password (if using/needed):")?;
@@ -184,6 +179,7 @@ impl AutoDeployCommand {
         tx.args(vec!["tx", "compute", "store", contract, "--from", from])
             .args(Self::get_common_cli_args(true))
             .stdout(Stdio::piped())
+            .current_dir(ProjectConfig::find_project_root()?)
             .stdin(if password.is_some() {
                 Stdio::piped()
             } else {
@@ -263,7 +259,7 @@ impl AutoDeployCommand {
             if cmd.stderr.len() > 0 && retries > 0 {
                 // crude but will do for beta
                 retries -= 1;
-                std::thread::sleep(Duration::from_millis(1500));
+                std::thread::sleep(Duration::from_millis(2000));
                 continue;
             }
             let response: TxQueryResponse = serde_json::from_slice(tx.as_slice())?;

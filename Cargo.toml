@@ -1,9 +1,13 @@
 [package]
 name = "warp-cli"
-description = "Build, test, and deploy Secret Network Smart Contracts att warp speeds"
+description = "Scaffold, build, test, and deploy Secret Network Smart Contracts faster than ever before"
 version = "0.1.0"
 license = "MIT"
 edition = "2021"
+homepage = "https://secret-warp.github.io/"
+repository = "https://github.com/secret-warp/warp-cli"
+keywords = ["secret-network", "blockchain", "productivity", "smart-contracts", "cosmwasm"]
+readme = "README.md"
 
 [profile.release]
 opt-level = "s"     # Optimize for size.

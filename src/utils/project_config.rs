@@ -68,9 +68,25 @@ impl ProjectConfig {
         Ok(())
     }
 
+    pub fn find_project_root() -> Result<PathBuf, WarpError> {
+        let mut current_dir = std::env::current_dir()?;
+        loop {
+            let project_file = current_dir.join(CONFIG_FILENAME);
+            if project_file.exists() {
+                return Ok(current_dir);
+            }
+            let parent = current_dir.parent();
+            if let Some(parent) = parent {
+                current_dir = parent.into();
+            } else {
+                return Err(WarpError::ProjectFileNotFound);
+            };
+        }
+    }
+
     pub fn parse_project_config() -> Result<(PathBuf, Self), WarpError> {
         let mut current_dir = std::env::current_dir()?;
-        let mut config: ProjectConfig;
+        let config: ProjectConfig;
         loop {
             let project_file = current_dir.join(CONFIG_FILENAME);
             if project_file.exists() {
@@ -84,5 +100,11 @@ impl ProjectConfig {
                 return Err(WarpError::ProjectFileNotFound);
             };
         }
+    }
+
+    pub fn save_project_config(&self) -> Result<(), WarpError> {
+        let toml_path = Self::find_project_root()?.join("Warp.toml");
+        std::fs::write(toml_path, toml::to_string_pretty(self)?)?;
+        Ok(())
     }
 }
