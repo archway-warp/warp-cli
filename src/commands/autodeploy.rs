@@ -88,6 +88,7 @@ impl Executable for AutoDeployCommand {
                 &config.autodeploy.account_id,
                 &label,
                 &init_msg,
+                step.coins,
                 password,
             )?
             .txhash;
@@ -209,6 +210,7 @@ impl AutoDeployCommand {
         from: &str,
         label: &str,
         init_msg: &str,
+        coins: Option<String>,
         password: Option<&str>,
     ) -> Result<TxQueryResponse, WarpError> {
         let mut tx = Command::new("secretcli");
@@ -222,6 +224,8 @@ impl AutoDeployCommand {
             from,
             "--label",
             label,
+            "--amount",
+            &coins.unwrap_or_default(),
         ])
         .args(Self::get_common_cli_args(true))
         .stdout(Stdio::piped())

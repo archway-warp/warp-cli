@@ -33,6 +33,7 @@ pub struct AutoDeployStep {
     pub contract: String,
     pub label: String,
     pub init_msg: String,
+    pub coins: Option<String>,
 }
 
 impl ProjectConfig {

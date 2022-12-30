@@ -1,6 +1,8 @@
 [package]
-name = "warp"
+name = "warp-cli"
+description = "Build, test, and deploy Secret Network Smart Contracts att warp speeds"
 version = "0.1.0"
+license = "MIT"
 edition = "2021"
 
 [profile.release]
@@ -19,3 +21,8 @@ thiserror = "1.0.38"
 regex = "1.7.0"
 rpassword = "7.2.0"
 rand = "0.8.1"
+termcolor = "1.1.3"
+
+[[bin]]
+name = "warp"
+path = "src/main.rs"

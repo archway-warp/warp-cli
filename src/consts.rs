@@ -1,10 +1,10 @@
 pub const MSG_FILE: &'static str = "use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use cosmwasm_std::CanonicalAddr;
+use cosmwasm_std::{Addr, CanonicalAddr};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub owner: CanonicalAddr,
+    pub owner: Addr,
     pub message: String,
 }
 
