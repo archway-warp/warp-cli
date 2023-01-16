@@ -94,7 +94,6 @@ impl NewCommand {
     }
 }
 mod tests {
-    use crate::commands::new::NewCommand;
 
     #[test]
     fn path_test() {
@@ -106,7 +105,7 @@ mod tests {
             ("path_to_file", "path_to_file"),
         ];
         for path in paths.iter() {
-            let result = NewCommand::optimize_for_path(path.0).unwrap();
+            let result = super::NewCommand::optimize_for_path(path.0).unwrap();
             assert_eq!(path.1, result);
         }
     }
