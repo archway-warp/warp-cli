@@ -51,11 +51,10 @@ impl Executable for BuildCommand {
                     .filter(|x| x.to_str().unwrap().contains("-x86_64"))
                     .collect::<Vec<_>>();
                 for file in files_to_rename {
-                    println!(" => {}", &file.to_str().unwrap());
-                    std::fs::rename(
-                        artifacts.clone().join(&file),
-                        file.to_str().unwrap().replace("-x86_64", ""),
-                    )?;
+                    let new_name = artifacts
+                        .clone()
+                        .join(file.to_str().unwrap().replace("-x86_64", ""));
+                    std::fs::rename(artifacts.clone().join(&file), new_name)?;
                 }
             }
         } else {
