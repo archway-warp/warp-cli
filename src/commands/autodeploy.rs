@@ -72,7 +72,13 @@ impl Executable for AutoDeployCommand {
             let label = if config.autodeploy.make_labels_unique {
                 let mut l = step.label.clone();
                 l.push('-');
-                l.push_str(&rand::random::<u64>().to_string());
+                l.push_str(
+                    &std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs()
+                        .to_string(),
+                );
                 l
             } else {
                 step.label.clone()
