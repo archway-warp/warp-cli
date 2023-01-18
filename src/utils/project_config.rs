@@ -9,8 +9,15 @@ pub const CONFIG_FILENAME: &str = "Warp.toml";
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ProjectConfig {
+    pub tooling: Tooling,
     pub tests: TestConfig,
     pub autodeploy: AutoDeploy,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Tooling {
+    /// Backend for optimizing contracts for production
+    pub optimizer_backend: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -43,6 +50,9 @@ impl ProjectConfig {
             return Err(WarpError::ProjectFileAlreadyExists(toml_path));
         }
         let config = Self {
+            tooling: Tooling {
+                optimizer_backend: "default".to_owned(),
+            },
             tests: TestConfig {
                 node_setup_time: 8,
                 test_container_name: format!(

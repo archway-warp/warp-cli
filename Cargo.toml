@@ -9,6 +9,14 @@ repository = "https://github.com/secret-warp/warp-cli"
 keywords = ["secret-network", "blockchain", "productivity", "smart-contracts", "cosmwasm"]
 readme = "README.md"
 
+[profile.dev]
+opt-level = 3     # Optimize for size.
+lto = false          # Enable Link Time Optimization
+codegen-units = 24   # Reduce number of codegen units to increase optimizations.
+panic = "abort"     # Abort on panic
+strip = false        # Automatically strip symbols from the binary.
+
+
 [profile.release]
 opt-level = "s"     # Optimize for size.
 lto = true          # Enable Link Time Optimization

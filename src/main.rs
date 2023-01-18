@@ -7,8 +7,8 @@ mod utils;
 
 use clap::{command, Parser, Subcommand};
 use commands::{
-    autodeploy::AutoDeployCommand, build::BuildCommand, init::InitCommand, new::NewCommand,
-    node::NodeCommand, test::TestCommand,
+    autodeploy::AutoDeployCommand, build::BuildCommand, config::ConfigCommand, init::InitCommand,
+    new::NewCommand, node::NodeCommand, test::TestCommand,
 };
 use error::WarpError;
 use executable::Executable;
@@ -25,6 +25,8 @@ struct Cli {
 enum Commands {
     /// Initialize a new Warp project
     Init(InitCommand),
+    /// Configure the Warp workspace
+    Config(ConfigCommand),
     /// Build the current workspace
     Build(BuildCommand),
     /// Execute the 'Auto Deploy' script for the workspace (see Warp.toml)
@@ -42,16 +44,14 @@ fn main() -> Result<(), WarpError> {
 
     // You can check for the existence of subcommands, and if found use their
     // matches just as you would the top level cmd
-    let error = match &cli.command {
+    match &cli.command {
         Commands::Deploy(x) => x.execute(),
         Commands::Init(x) => x.execute(),
         Commands::New(x) => x.execute(),
         Commands::Build(x) => x.execute(),
         Commands::Test(x) => x.execute(),
         Commands::Node(x) => x.execute(),
-    };
-    if let Err(x) = error {
-        return Err(x);
-    }
+        Commands::Config(x) => x.execute(),
+    }?;
     Ok(())
 }

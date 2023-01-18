@@ -22,6 +22,7 @@ impl Executable for NewCommand {
     fn execute(&self) -> Result<(), WarpError> {
         let (root, mut config) = ProjectConfig::parse_project_config()?;
         let contract_name = Self::optimize_for_path(&self.name)?;
+        println!("[1/3] Downloading contract files...");
         let contract_dir = root.join("contracts").join(&contract_name);
         std::fs::create_dir_all(contract_dir.clone())?;
         let clone = std::process::Command::new("git")
@@ -30,6 +31,7 @@ impl Executable for NewCommand {
                 "--depth=1",
                 "https://github.com/secret-warp/contract-template.git",
                 contract_dir.clone().as_os_str().to_str().unwrap(),
+                "-q",
             ])
             .spawn()?
             .wait()?;
@@ -62,6 +64,7 @@ impl Executable for NewCommand {
         let mut lib_file = File::options().write(true).append(true).open(lib_path)?;
         writeln!(&mut lib_file, "pub mod {};", &contract_name)?;
 
+        println!("[2/3] Updating the deployment script...");
         let deploy_step = AutoDeployStep {
             id: format!("$_{}", &self.name),
             contract: format!("artifacts/{}.wasm", &self.name),
@@ -71,6 +74,13 @@ impl Executable for NewCommand {
         };
         config.autodeploy.steps.push(deploy_step);
         config.save_project_config()?;
+        println!("[2/2] Building the workspace...");
+        std::process::Command::new("cargo")
+            .arg("build")
+            .current_dir(root)
+            .spawn()?
+            .wait()?;
+
         Ok(())
     }
 }
