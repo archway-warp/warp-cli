@@ -9,6 +9,7 @@ use crate::{
     },
 };
 use clap::Args;
+use owo_colors::OwoColorize;
 
 #[derive(Args)]
 pub struct AutoDeployCommand {
@@ -36,7 +37,7 @@ impl Executable for AutoDeployCommand {
         println!("Uploading contracts to the chain...");
         let mut store_txs: Vec<(AutoDeployStep, String)> = vec![];
         for step in config.autodeploy.steps.iter() {
-            print!(" => {}", step.contract);
+            print!(" {} {}", "=>".bright_yellow(), step.contract.bright_blue());
             let response = secretcli_util::store_contract(
                 &step.contract,
                 &config.autodeploy.account_id,
@@ -55,7 +56,12 @@ impl Executable for AutoDeployCommand {
                 .unwrap()
                 .value
                 .clone();
-            println!("\tDone ({}) - CODE: {}", &response.txhash, code_id);
+            println!(
+                "\t{} ({}) - CODE: {}",
+                "Done.".bright_green(),
+                &response.txhash.bright_blue(),
+                code_id.bright_green()
+            );
 
             store_txs.push((step.clone(), code_id));
         }
@@ -66,7 +72,7 @@ impl Executable for AutoDeployCommand {
         println!("Instantiating uploaded contracts...");
         let mut contract_addresses: BTreeMap<String, String> = BTreeMap::new();
         for (step, code_id) in store_txs {
-            print!(" => {}", &step.contract);
+            print!(" {} {}", "=>".bright_yellow(), &step.contract.bright_blue());
             let init_msg =
                 Self::format_init_message(&step.init_msg, &contract_addresses, &deployment_account);
             let label = if config.autodeploy.make_labels_unique {
@@ -110,7 +116,12 @@ impl Executable for AutoDeployCommand {
                 .value
                 .clone();
             contract_addresses.insert(step.id, addr.clone());
-            println!("\tDone ({}) - {}", &addr, &init_msg);
+            println!(
+                "\t{} ({}) -- '{}'",
+                "Done.".bright_green(),
+                &addr.bright_cyan(),
+                &init_msg.bright_yellow()
+            );
         }
         Ok(())
     }

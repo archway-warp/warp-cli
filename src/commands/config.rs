@@ -2,6 +2,7 @@ use std::process::Command;
 
 pub use clap::{arg, Args};
 use clap::{Subcommand, ValueEnum};
+use owo_colors::OwoColorize;
 
 use crate::{error::WarpError, executable::Executable, utils::project_config::ProjectConfig};
 
@@ -59,8 +60,10 @@ impl Executable for ConfigCommand {
                 .to_owned();
             }
             println!(
-                " => Optimizer Backend: {}",
-                &config.tooling.optimizer_backend
+                " {} {}: {}",
+                "=>".bright_yellow(),
+                "Optimizer Backend".bright_blue(),
+                config.tooling.optimizer_backend.bright_green()
             );
         }
 
