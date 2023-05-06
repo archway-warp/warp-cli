@@ -4,9 +4,9 @@ description = "Scaffold, build, test, and deploy Archway Network Smart Contracts
 version = "0.1.0"
 license = "MIT"
 edition = "2021"
-homepage = "https://secret-warp.github.io/"
-repository = "https://github.com/secret-warp/warp-cli"
-keywords = ["archway", "archway-network", "blockchain", "productivity", "smart-contracts", "cosmwasm"]
+homepage = "https://archway-warp.github.io/"
+repository = "https://github.com/archway-warp/warp-cli"
+keywords = ["archway", "blockchain", "productivity", "smart-contracts", "cosmwasm"]
 readme = "README.md"
 
 [profile.dev]

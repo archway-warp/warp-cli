@@ -23,7 +23,13 @@ impl Executable for AutoDeployCommand {
     fn execute(&self) -> Result<(), WarpError> {
         let (_root, config) = ProjectConfig::parse_project_config()?;
         if config.autodeploy.account_id.is_empty() {
-            println!("{} {}", "Warning!".bright_yellow(), "");
+            println!(
+                "{} {}",
+                "Warning!".bright_yellow(),
+                "You did not specify a deployment account in Warp.toml (autodeploy.account_id)"
+                    .yellow()
+            );
+            return Ok(());
         }
 
         let password =
