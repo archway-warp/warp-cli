@@ -4,6 +4,7 @@ use crate::{
     error::WarpError,
     executable::Executable,
     utils::{
+        deployment_task::DeploymentTask,
         project_config::{AutoDeployStep, ProjectConfig},
         secretcli_util,
     },
@@ -21,6 +22,9 @@ pub struct AutoDeployCommand {
 impl Executable for AutoDeployCommand {
     fn execute(&self) -> Result<(), WarpError> {
         let (_root, config) = ProjectConfig::parse_project_config()?;
+        if config.autodeploy.account_id.is_empty() {
+            println!("{} {}", "Warning!".bright_yellow(), "");
+        }
 
         let password =
             rpassword::prompt_password("Enter your keyring password (if using/needed):")?;
@@ -30,26 +34,27 @@ impl Executable for AutoDeployCommand {
             Some(password.as_str())
         };
         let deployment_account =
-            secretcli_util::get_key_info(&config.autodeploy.account_id, password)?.address;
+            secretcli_util::get_key_info(&config.autodeploy.account_id, password, &config)?.address;
 
         println!("Deploying from: {}", &deployment_account);
 
         println!("Uploading contracts to the chain...");
-        let mut store_txs: Vec<(AutoDeployStep, String)> = vec![];
+        let mut store_txs: Vec<DeploymentTask> = vec![];
         for step in config.autodeploy.steps.iter() {
             print!(" {} {}", "=>".bright_yellow(), step.contract.bright_blue());
             let response = secretcli_util::store_contract(
                 &step.contract,
                 &config.autodeploy.account_id,
                 password,
+                &config,
             )?;
             let full_store_tx = secretcli_util::query_tx(&response.txhash)?;
             let code_id = full_store_tx
                 .logs
-                .get(0)
+                .last()
                 .unwrap()
                 .events
-                .first()
+                .last()
                 .unwrap()
                 .attributes
                 .last()
@@ -63,20 +68,32 @@ impl Executable for AutoDeployCommand {
                 code_id.bright_green()
             );
 
-            store_txs.push((step.clone(), code_id));
+            store_txs.push(DeploymentTask {
+                step: &step,
+                code_id: Some(code_id.clone()),
+                contract_address: None,
+            });
         }
         // Only add the extra wait if deploying one contract since otherwise it'll be fine anyway
         if store_txs.len() == 1 {
             std::thread::sleep(Duration::from_millis(4500));
         }
         println!("Instantiating uploaded contracts...");
-        let mut contract_addresses: BTreeMap<String, String> = BTreeMap::new();
-        for (step, code_id) in store_txs {
-            print!(" {} {}", "=>".bright_yellow(), &step.contract.bright_blue());
+        for task in config.autodeploy.steps.iter() {
+            if task.store_only {
+                println!(
+                    " {} {} {}",
+                    "(X)".bright_yellow(),
+                    &task.contract.bright_blue(),
+                    "skipped.".bright_yellow()
+                );
+                continue;
+            }
+            print!(" {} {}", "=>".bright_yellow(), &task.contract.bright_blue());
             let init_msg =
-                Self::format_init_message(&step.init_msg, &contract_addresses, &deployment_account);
+                Self::format_init_message(&task.init_msg, &store_txs, &deployment_account);
             let label = if config.autodeploy.make_labels_unique {
-                let mut l = step.label.clone();
+                let mut l = task.label.clone();
                 l.push('-');
                 l.push_str(
                     &std::time::SystemTime::now()
@@ -87,16 +104,22 @@ impl Executable for AutoDeployCommand {
                 );
                 l
             } else {
-                step.label.clone()
+                task.label.clone()
             };
-
+            let t = store_txs.iter_mut().find(|x| &x.step.id == &task.id);
+            if t.is_none() {
+                break;
+            }
+            let t = t.unwrap();
             let init_tx = secretcli_util::instantiate_contract(
-                &code_id,
+                t.code_id.as_ref().unwrap(),
                 &config.autodeploy.account_id,
+                &deployment_account,
                 &label,
                 &init_msg,
-                step.coins,
+                task.coins.clone(),
                 password,
+                &config,
             )?
             .txhash;
             let init_full_tx = secretcli_util::query_tx(&init_tx)?;
@@ -115,7 +138,7 @@ impl Executable for AutoDeployCommand {
                 .unwrap()
                 .value
                 .clone();
-            contract_addresses.insert(step.id, addr.clone());
+            t.contract_address = Some(addr.clone());
             println!(
                 "\t{} ({}) -- '{}'",
                 "Done.".bright_green(),
@@ -130,13 +153,18 @@ impl Executable for AutoDeployCommand {
 impl AutoDeployCommand {
     fn format_init_message(
         init_msg: &str,
-        addresses: &BTreeMap<String, String>,
+        tasks: &[DeploymentTask],
         deployment_account: &str,
     ) -> String {
         let mut new_msg = init_msg.replace("$account_id", &deployment_account);
-        addresses
-            .iter()
-            .for_each(|(k, v)| new_msg = new_msg.replace(k, v));
+        tasks.iter().for_each(|x| {
+            new_msg = new_msg
+                .replace(
+                    &format!("${}", &x.step.id),
+                    &x.contract_address.as_ref().unwrap_or(&String::new()),
+                )
+                .replace(&format!("#{}", &x.step.id), &x.code_id.as_ref().unwrap())
+        });
         new_msg
     }
 }

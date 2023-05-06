@@ -29,7 +29,7 @@ impl Executable for NewCommand {
             .args(vec![
                 "clone",
                 "--depth=1",
-                "https://github.com/secret-warp/contract-template.git",
+                "https://github.com/archway-warp/contract-template.git",
                 contract_dir.clone().as_os_str().to_str().unwrap(),
                 "-q",
             ])
@@ -69,6 +69,7 @@ impl Executable for NewCommand {
             id: format!("$_{}", &self.name),
             contract: format!("artifacts/{}.wasm", &self.name),
             label: self.label.as_ref().unwrap_or(&self.name).to_string(),
+            store_only: false,
             init_msg: "{ \"owner\": \"$account_id\", \"message\": \"\" }".to_owned(),
             coins: None,
         };

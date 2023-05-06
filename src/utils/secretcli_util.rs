@@ -4,16 +4,35 @@ use std::{
 };
 
 use crate::{
+    archway::{keys_show::KeysShowResponse, tx_query::TxQueryResponse},
     error::WarpError,
-    secretcli::{keys_show::KeysShowResponse, tx_query::TxQueryResponse},
 };
 
 use super::{command_util::CommandWithInput, project_config::ProjectConfig};
 
-fn get_common_cli_args<'a>(tx: bool) -> Vec<&'a str> {
+fn get_common_cli_args<'a>(
+    tx: bool,
+    network: bool,
+    store: bool,
+    config: &'a ProjectConfig,
+) -> Vec<&'a str> {
     let mut args = vec!["--output", "json"];
+    if network {
+        args.push("--chain-id");
+        args.push(&config.network.chain_id);
+        args.push("--node");
+        args.push(&config.network.rpc_url);
+    }
     if tx {
-        let mut tx_args = vec!["--gas", "1000000", "-y", "-b", "sync"];
+        let mut tx_args = vec![
+            "--gas",
+            if store { "3200000" } else { "1000000" },
+            "-y",
+            "-b",
+            "sync",
+            "--fees",
+            "8000uconst",
+        ];
         args.append(&mut tx_args);
     }
     args
@@ -22,10 +41,11 @@ fn get_common_cli_args<'a>(tx: bool) -> Vec<&'a str> {
 pub fn get_key_info(
     account_id: &str,
     password: Option<&str>,
+    config: &ProjectConfig,
 ) -> Result<KeysShowResponse, WarpError> {
-    let mut tx = Command::new("secretcli");
+    let mut tx = Command::new("archwayd");
     tx.args(vec!["keys", "show", account_id])
-        .args(get_common_cli_args(false))
+        .args(get_common_cli_args(false, false, false, config))
         .stdout(Stdio::piped())
         .stdin(if password.is_some() {
             Stdio::piped()
@@ -49,10 +69,11 @@ pub fn store_contract(
     contract: &str,
     from: &str,
     password: Option<&str>,
+    config: &ProjectConfig,
 ) -> Result<TxQueryResponse, WarpError> {
-    let mut tx = Command::new("secretcli");
-    tx.args(vec!["tx", "compute", "store", contract, "--from", from])
-        .args(get_common_cli_args(true))
+    let mut tx = Command::new("archwayd");
+    tx.args(vec!["tx", "wasm", "store", contract, "--from", from])
+        .args(get_common_cli_args(true, true, true, config))
         .stdout(Stdio::piped())
         .current_dir(ProjectConfig::find_project_root()?)
         .stdin(if password.is_some() {
@@ -79,15 +100,17 @@ pub fn store_contract(
 pub fn instantiate_contract(
     code_id: &str,
     from: &str,
+    admin: &str,
     label: &str,
     init_msg: &str,
     coins: Option<String>,
     password: Option<&str>,
+    config: &ProjectConfig,
 ) -> Result<TxQueryResponse, WarpError> {
-    let mut tx = Command::new("secretcli");
+    let mut tx = Command::new("archwayd");
     tx.args(vec![
         "tx",
-        "compute",
+        "wasm",
         "instantiate",
         code_id,
         init_msg,
@@ -97,8 +120,10 @@ pub fn instantiate_contract(
         label,
         "--amount",
         &coins.unwrap_or_default(),
+        "--admin",
+        admin,
     ])
-    .args(get_common_cli_args(true))
+    .args(get_common_cli_args(true, true, false, config))
     .stdout(Stdio::piped())
     .stdin(if password.is_some() {
         Stdio::piped()
@@ -125,9 +150,14 @@ pub fn instantiate_contract(
 pub fn query_tx(tx_hash: &str) -> Result<TxQueryResponse, WarpError> {
     let mut retries = 7;
     loop {
-        let cmd = Command::new("secretcli")
+        let cmd = Command::new("archwayd")
             .args(vec!["q", "tx", tx_hash])
-            .args(get_common_cli_args(false))
+            .args(get_common_cli_args(
+                false,
+                true,
+                false,
+                &ProjectConfig::empty(),
+            ))
             .stdin(Stdio::inherit())
             .output()?;
         let tx = cmd.stdout;

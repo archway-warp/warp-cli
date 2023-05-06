@@ -1,8 +1,8 @@
+mod archway;
 mod commands;
 mod consts;
 mod error;
 mod executable;
-mod secretcli;
 mod utils;
 
 use clap::{command, Parser, Subcommand};
@@ -33,9 +33,9 @@ enum Commands {
     Deploy(AutoDeployCommand),
     /// Scaffold a new contract
     New(NewCommand),
-    /// Start the local secret validator node
+    /// [WIP] Start the local validator node
     Node(NodeCommand),
-    /// Run the JavaScript tests from the '/tests/' directory
+    /// [WIP] Run the JavaScript tests from the '/tests/' directory
     Test(TestCommand),
 }
 

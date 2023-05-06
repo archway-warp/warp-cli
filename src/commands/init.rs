@@ -16,7 +16,7 @@ impl Executable for InitCommand {
         println!("Initializing new workspace...");
         let cmd = Command::new("git")
             .arg("clone")
-            .arg("https://github.com/secret-warp/warp-template.git")
+            .arg("https://github.com/archway-warp/warp-template.git")
             .arg(dir.as_os_str())
             .stdout(Stdio::null())
             .spawn()?

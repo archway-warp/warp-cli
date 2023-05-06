@@ -1,13 +1,13 @@
 # Warp CLI
 
-**_All-in-one productivity toolchain for building, testing, and deploying Secret Smart Contracts._**
+**_All-in-one productivity toolchain for building, testing, and deploying Archway Smart Contracts._**
 
 # Requirements
 
 This tool was built to support the current toolstack, so everything you'd normally need for developing smart contracts is still required:
 
 - Rust 1.50+,
-- SecretCLI
+- `archwayd` CLI tool
 - Node & Npm if you want to run tests,
 - Docker for building contracts and running the node
 
@@ -18,13 +18,13 @@ I am planning on reducing this list in the future, but it's not a priority right
 You can build the binary from the main branch of this repo:
 
 ```
-cargo install --git https://github.com/secret-warp/warp-cli.git
+cargo install --git https://github.com/archway-warp/warp-cli.git
 ```
 
 Alternatively, there's also a crates.io option
 
 ```
-cargo install warp-cli
+cargo install arch-warp-cli
 ```
 
 # Usage
@@ -37,7 +37,7 @@ Commands:
   build   Build the current workspace
   deploy  Execute the 'Auto Deploy' script for the workspace (see Warp.toml)
   new     Scaffold a new contract
-  node    Start the local secret validator node
+  node    Start the local validator node
   test    Run the JavaScript tests from the '/tests/' directory
   help    Print this message or the help of the given subcommand(s)
 

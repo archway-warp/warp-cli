@@ -9,9 +9,17 @@ pub const CONFIG_FILENAME: &str = "Warp.toml";
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ProjectConfig {
+    pub network: Network,
     pub tooling: Tooling,
     pub tests: TestConfig,
     pub autodeploy: AutoDeploy,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Network {
+    pub chain_id: String,
+    pub rpc_url: String,
+    pub denom: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -27,29 +35,57 @@ pub struct TestConfig {
     pub persist_image: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AutoDeploy {
     pub account_id: String,
     pub make_labels_unique: bool,
     pub steps: Vec<AutoDeployStep>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AutoDeployStep {
     pub id: String,
     pub contract: String,
     pub label: String,
+    pub store_only: bool,
     pub init_msg: String,
     pub coins: Option<String>,
 }
 
 impl ProjectConfig {
+    pub fn empty() -> ProjectConfig {
+        ProjectConfig {
+            network: Network {
+                chain_id: String::new(),
+                rpc_url: String::new(),
+                denom: String::new(),
+            },
+            tooling: Tooling {
+                optimizer_backend: String::new(),
+            },
+            tests: TestConfig {
+                node_setup_time: 0,
+                test_container_name: String::new(),
+                persist_image: false,
+            },
+            autodeploy: AutoDeploy {
+                account_id: String::new(),
+                make_labels_unique: false,
+                steps: vec![],
+            },
+        }
+    }
     pub fn generate_and_save(path: PathBuf) -> Result<(), WarpError> {
         let toml_path = path.join(CONFIG_FILENAME);
         if toml_path.exists() {
             return Err(WarpError::ProjectFileAlreadyExists(toml_path));
         }
         let config = Self {
+            network: Network {
+                rpc_url: "https://rpc.constantine-2.archway.tech:443".to_string(),
+                denom: "uconst".to_string(),
+                chain_id: "constantine-2".to_string(),
+            },
             tooling: Tooling {
                 optimizer_backend: "default".to_owned(),
             },
