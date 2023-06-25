@@ -16,6 +16,10 @@ This tool was built to support the current toolstack, so everything you'd normal
 
 I am planning on reducing this list in the future, but it's not a priority right now.
 
+# Changelog
+
+v0.2.0 changelog can be found [here](CHANGELOG.md)
+
 # Installation
 
 You can build the binary from the main branch of this repo:
