@@ -3,8 +3,10 @@ use std::process::Command;
 pub use clap::{arg, Args};
 
 use crate::{
-    commands::config::OptimizerBackend, error::WarpError, executable::Executable,
-    utils::project_config::ProjectConfig,
+    commands::config::OptimizerBackend,
+    error::WarpError,
+    executable::Executable,
+    utils::{project_config::ProjectConfig, secretcli_util},
 };
 
 #[derive(Args)]

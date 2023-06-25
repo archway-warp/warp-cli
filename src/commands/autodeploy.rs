@@ -1,9 +1,11 @@
 use std::{collections::BTreeMap, time::Duration};
 
 use crate::{
+    commands::BuildCommand,
     error::WarpError,
     executable::Executable,
     utils::{
+        deployment_result::DeploymentResult,
         deployment_task::DeploymentTask,
         project_config::{AutoDeployStep, ProjectConfig},
         secretcli_util,
@@ -14,9 +16,9 @@ use owo_colors::OwoColorize;
 
 #[derive(Args)]
 pub struct AutoDeployCommand {
-    //#[arg(short, long)]
-    // The name of the new contract
-    //pub name: String,
+    #[arg(short, long)]
+    /// The name of the new contract
+    pub rebuild: bool,
 }
 
 impl Executable for AutoDeployCommand {
@@ -39,6 +41,11 @@ impl Executable for AutoDeployCommand {
         } else {
             Some(password.as_str())
         };
+
+        if self.rebuild {
+            BuildCommand { optimized: true }.execute()?;
+        }
+
         let deployment_account =
             secretcli_util::get_key_info(&config.autodeploy.account_id, password, &config)?.address;
 
@@ -85,6 +92,15 @@ impl Executable for AutoDeployCommand {
             std::thread::sleep(Duration::from_millis(4500));
         }
         println!("Instantiating uploaded contracts...");
+
+        let deploy_existed = DeploymentResult::exists()?;
+        let mut deployment_file = if deploy_existed {
+            DeploymentResult::parse()?.1
+        } else {
+            DeploymentResult::default()
+        };
+        let current_network = deployment_file.network(&config.network.chain_id);
+
         for task in config.autodeploy.steps.iter() {
             if task.store_only {
                 println!(
@@ -95,63 +111,100 @@ impl Executable for AutoDeployCommand {
                 );
                 continue;
             }
-            print!(" {} {}", "=>".bright_yellow(), &task.contract.bright_blue());
-            let init_msg =
-                Self::format_init_message(&task.init_msg, &store_txs, &deployment_account);
-            let label = if config.autodeploy.make_labels_unique {
-                let mut l = task.label.clone();
-                l.push('-');
-                l.push_str(
-                    &std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs()
-                        .to_string(),
+            let contract_addr: String;
+            if !current_network.contains_key(&task.id) {
+                print!(" {} {}", "=>".bright_yellow(), &task.contract.bright_blue());
+                let init_msg =
+                    Self::format_init_message(&task.init_msg, &store_txs, &deployment_account);
+                let label = if config.autodeploy.make_labels_unique {
+                    let mut l = task.label.clone();
+                    l.push('-');
+                    l.push_str(
+                        &std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs()
+                            .to_string(),
+                    );
+                    l
+                } else {
+                    task.label.clone()
+                };
+                let t = store_txs.iter_mut().find(|x| &x.step.id == &task.id);
+                if t.is_none() {
+                    break;
+                }
+                let t = t.unwrap();
+                let init_tx = secretcli_util::instantiate_contract(
+                    t.code_id.as_ref().unwrap(),
+                    &config.autodeploy.account_id,
+                    &deployment_account,
+                    &label,
+                    &init_msg,
+                    task.coins.clone(),
+                    password,
+                    &config,
+                )?
+                .txhash;
+                let init_full_tx = secretcli_util::query_tx(&init_tx)?;
+                let addr = init_full_tx
+                    .logs
+                    .first()
+                    .unwrap()
+                    .events
+                    .first()
+                    .unwrap()
+                    .attributes
+                    .iter()
+                    .filter(|x| x.key.contains("address"))
+                    .collect::<Vec<_>>()
+                    .get(0)
+                    .unwrap()
+                    .value
+                    .clone();
+                t.contract_address = Some(addr.clone());
+                contract_addr = addr.clone();
+                println!(
+                    "\t{} ({}) -- '{}'",
+                    "Done.".bright_green(),
+                    &addr.bright_cyan(),
+                    &init_msg.bright_yellow()
                 );
-                l
             } else {
-                task.label.clone()
-            };
-            let t = store_txs.iter_mut().find(|x| &x.step.id == &task.id);
-            if t.is_none() {
-                break;
+                print!(" {} {}", "=>".bright_yellow(), &task.contract.bright_blue());
+
+                let t = store_txs.iter_mut().find(|x| &x.step.id == &task.id);
+                if t.is_none() {
+                    break;
+                }
+                let t = t.unwrap();
+                contract_addr = current_network.get(&task.id).unwrap().clone();
+                let tx = secretcli_util::migrate_contract(
+                    &contract_addr,
+                    &t.code_id.as_ref().unwrap(),
+                    &config.autodeploy.account_id,
+                    &task.migrate_msg.as_ref().unwrap_or(&String::from("{}")),
+                    password,
+                    &config,
+                )?;
+                let _full_tx = secretcli_util::query_tx(&tx.txhash)?;
+                println!(
+                    "\t{} (CODE ID: {} => {}) -- '{}'",
+                    "Done.".bright_green(),
+                    &t.code_id.as_ref().unwrap().bright_cyan(),
+                    &contract_addr.bright_cyan(),
+                    &task
+                        .migrate_msg
+                        .as_ref()
+                        .unwrap_or(&String::from("{}"))
+                        .bright_yellow()
+                );
             }
-            let t = t.unwrap();
-            let init_tx = secretcli_util::instantiate_contract(
-                t.code_id.as_ref().unwrap(),
-                &config.autodeploy.account_id,
-                &deployment_account,
-                &label,
-                &init_msg,
-                task.coins.clone(),
-                password,
-                &config,
-            )?
-            .txhash;
-            let init_full_tx = secretcli_util::query_tx(&init_tx)?;
-            let addr = init_full_tx
-                .logs
-                .first()
-                .unwrap()
-                .events
-                .first()
-                .unwrap()
-                .attributes
-                .iter()
-                .filter(|x| x.key.contains("address"))
-                .collect::<Vec<_>>()
-                .get(0)
-                .unwrap()
-                .value
-                .clone();
-            t.contract_address = Some(addr.clone());
-            println!(
-                "\t{} ({}) -- '{}'",
-                "Done.".bright_green(),
-                &addr.bright_cyan(),
-                &init_msg.bright_yellow()
-            );
+            current_network
+                .entry(task.id.clone())
+                .or_insert(contract_addr);
         }
+        deployment_file.save()?;
         Ok(())
     }
 }

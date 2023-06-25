@@ -48,6 +48,7 @@ pub struct AutoDeployStep {
     pub contract: String,
     pub label: String,
     pub store_only: bool,
+    pub migrate_msg: Option<String>,
     pub init_msg: String,
     pub coins: Option<String>,
 }
@@ -82,9 +83,9 @@ impl ProjectConfig {
         }
         let config = Self {
             network: Network {
-                rpc_url: "https://rpc.constantine-2.archway.tech:443".to_string(),
-                denom: "uconst".to_string(),
-                chain_id: "constantine-2".to_string(),
+                rpc_url: "https://rpc.constantine-3.archway.tech:443".to_string(),
+                denom: "aconst".to_string(),
+                chain_id: "constantine-3".to_string(),
             },
             tooling: Tooling {
                 optimizer_backend: "default".to_owned(),
@@ -149,7 +150,7 @@ impl ProjectConfig {
     }
 
     pub fn save_project_config(&self) -> Result<(), WarpError> {
-        let toml_path = Self::find_project_root()?.join("Warp.toml");
+        let toml_path = Self::find_project_root()?.join(CONFIG_FILENAME);
         std::fs::write(toml_path, toml::to_string_pretty(self)?)?;
         Ok(())
     }

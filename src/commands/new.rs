@@ -71,6 +71,7 @@ impl Executable for NewCommand {
             label: self.label.as_ref().unwrap_or(&self.name).to_string(),
             store_only: false,
             init_msg: "{ \"owner\": \"$account_id\", \"message\": \"\" }".to_owned(),
+            migrate_msg: Some("{}".to_owned()),
             coins: None,
         };
         config.autodeploy.steps.push(deploy_step);

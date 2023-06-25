@@ -4,38 +4,57 @@ use std::{
 };
 
 use crate::{
-    archway::{keys_show::KeysShowResponse, tx_query::TxQueryResponse},
+    archway::{
+        estimate_fees::{EstimateFeesResponse, EstimatedFee},
+        keys_show::KeysShowResponse,
+        tx_query::TxQueryResponse,
+    },
     error::WarpError,
 };
 
 use super::{command_util::CommandWithInput, project_config::ProjectConfig};
 
-fn get_common_cli_args<'a>(
+fn get_common_cli_args<'a, 'b>(
     tx: bool,
     network: bool,
     store: bool,
-    config: &'a ProjectConfig,
-) -> Vec<&'a str> {
-    let mut args = vec!["--output", "json"];
+    config: &'b ProjectConfig,
+) -> Vec<String> {
+    let mut args = vec!["--output".to_string(), "json".to_string()];
     if network {
-        args.push("--chain-id");
-        args.push(&config.network.chain_id);
-        args.push("--node");
-        args.push(&config.network.rpc_url);
+        args.push("--chain-id".to_string());
+        args.push(config.network.chain_id.to_string());
+        args.push("--node".to_string());
+        args.push(config.network.rpc_url.to_string());
     }
     if tx {
+        let fee: EstimateFeesResponse = get_estimated_fee(config).unwrap();
         let mut tx_args = vec![
-            "--gas",
-            if store { "3200000" } else { "1000000" },
-            "-y",
-            "-b",
-            "sync",
-            "--fees",
-            "8000uconst",
+            "--gas".to_string(),
+            if store { "2435155" } else { "634263" }.to_string(),
+            "-y".to_string(),
+            "-b".to_string(),
+            "sync".to_string(),
+            "--gas".to_string(),
+            "auto".to_string(),
+            "--gas-adjustment".to_string(),
+            "1.4".to_string(),
+            "--gas-prices".to_string(),
+            fee.get_gas_price(),
         ];
         args.append(&mut tx_args);
     }
     args
+}
+pub fn get_estimated_fee(config: &ProjectConfig) -> Result<EstimateFeesResponse, WarpError> {
+    let cmd = Command::new("archwayd")
+        .args(vec!["q", "rewards", "estimate-fees", "1"])
+        .args(get_common_cli_args(false, true, false, config))
+        .stdin(Stdio::inherit())
+        .output()?;
+    let tx = cmd.stdout;
+    let response = serde_json::from_slice::<EstimateFeesResponse>(&tx)?;
+    Ok(response)
 }
 
 pub fn get_key_info(
@@ -122,6 +141,48 @@ pub fn instantiate_contract(
         &coins.unwrap_or_default(),
         "--admin",
         admin,
+    ])
+    .args(get_common_cli_args(true, true, false, config))
+    .stdout(Stdio::piped())
+    .stdin(if password.is_some() {
+        Stdio::piped()
+    } else {
+        Stdio::inherit()
+    });
+    let json_data: Vec<u8>;
+    if let Some(pass) = password {
+        let out = tx.call_process_with_input(pass)?;
+        json_data = out.stdout;
+    } else {
+        let out = tx.output()?;
+        let bytes = out.stdout.clone();
+        json_data = bytes;
+    }
+    let response: TxQueryResponse = serde_json::from_slice(json_data.as_slice())?;
+    if response.code != 0 {
+        return Err(WarpError::TxFailed(response.txhash, response.raw_log));
+    }
+    Ok(response)
+}
+
+pub fn migrate_contract(
+    contract_address: &str,
+    code_id: &str,
+    from: &str,
+    migrate_msg: &str,
+    password: Option<&str>,
+    config: &ProjectConfig,
+) -> Result<TxQueryResponse, WarpError> {
+    let mut tx = Command::new("archwayd");
+    tx.args(vec![
+        "tx",
+        "wasm",
+        "migrate",
+        contract_address,
+        code_id,
+        migrate_msg,
+        "--from",
+        from,
     ])
     .args(get_common_cli_args(true, true, false, config))
     .stdout(Stdio::piped())
