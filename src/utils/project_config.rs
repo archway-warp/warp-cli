@@ -83,7 +83,7 @@ impl ProjectConfig {
         }
         let config = Self {
             network: Network {
-                rpc_url: "https://rpc.constantine-3.archway.tech:443".to_string(),
+                rpc_url: "https://rpc.constantine.archway.tech:443".to_string(),
                 denom: "aconst".to_string(),
                 chain_id: "constantine-3".to_string(),
             },
