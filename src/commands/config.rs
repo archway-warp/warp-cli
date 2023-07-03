@@ -2,7 +2,8 @@ use std::process::Command;
 
 pub use clap::{arg, Args};
 use clap::{Subcommand, ValueEnum};
-use owo_colors::OwoColorize;
+use owo_colors::{AnsiColors, Color, CssColors, OwoColorize};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     error::WarpError,
@@ -43,8 +44,10 @@ pub enum OptimizerBackend {
     CwOptimizoor,
 }
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize)]
 pub enum NetworkConfig {
+    /// The long-awaited Archway Mainnet
+    Mainnet,
     /// The official supported Archway Testnet
     Constantine,
     /// Experimental Archway Testnet
@@ -85,7 +88,35 @@ impl Executable for ConfigCommand {
         }
 
         // Network Config
-        if let Some(x) = &args.network {}
+        if let Some(x) = &args.network {
+            if modify_values {
+                let params = x.network_params();
+                config.network = params;
+                match x {
+                    NetworkConfig::Mainnet => {
+                        println!("");
+                        println!(
+                            "{}",
+                            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⡿⠛⠉⠉⠉⠉⠛⢿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠙⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿
+⣿⣿⣿⣿⡇⠀⣠⣴⣾⣿⣿⣷⣦⣄⠀⢸⣿⣿⣿⣿
+⣿⣿⣿⣿⡇⣼⣿⣿⣿⣿⣿⣿⣿⣿⣧⢸⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿"
+                                .color(CssColors::DarkOrange)
+                        );
+                    }
+                    _ => {}
+                }
+            }
+            println!(
+                "{} {}: {}",
+                "=>".bright_yellow(),
+                "Network Configuration".bright_blue(),
+                serde_json::to_string(&x)?
+            );
+        }
 
         if modify_values {
             config.save_project_config()?;
@@ -97,6 +128,11 @@ impl Executable for ConfigCommand {
 impl NetworkConfig {
     fn network_params(&self) -> Network {
         match self {
+            NetworkConfig::Mainnet => Network {
+                chain_id: "archway-1".to_owned(),
+                rpc_url: "https://rpc.mainnet.archway.io:443".to_owned(),
+                denom: "aarch".to_owned(),
+            },
             NetworkConfig::Constantine => Network {
                 chain_id: "constantine-3".to_owned(),
                 rpc_url: "https://rpc.constantine.archway.tech:443".to_owned(),

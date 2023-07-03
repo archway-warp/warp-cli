@@ -1,7 +1,7 @@
 [package]
 name = "arch-warp-cli"
 description = "Scaffold, build, test, and deploy Archway Network Smart Contracts faster than ever before"
-version = "0.2.0"
+version = "0.2.1"
 license = "MIT"
 edition = "2021"
 homepage = "https://archway-warp.github.io/"
