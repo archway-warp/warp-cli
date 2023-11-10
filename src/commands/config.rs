@@ -1,8 +1,6 @@
-use std::process::Command;
-
 pub use clap::{arg, Args};
 use clap::{Subcommand, ValueEnum};
-use owo_colors::{AnsiColors, Color, CssColors, OwoColorize};
+use owo_colors::{CssColors, OwoColorize};
 use serde::{Deserialize, Serialize};
 
 use crate::{

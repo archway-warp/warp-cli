@@ -1,14 +1,12 @@
-use std::{collections::BTreeMap, time::Duration};
+use std::time::Duration;
 
 use crate::{
     commands::BuildCommand,
     error::WarpError,
     executable::Executable,
     utils::{
-        deployment_result::DeploymentResult,
-        deployment_task::DeploymentTask,
-        project_config::{AutoDeployStep, ProjectConfig},
-        secretcli_util,
+        deployment_result::DeploymentResult, deployment_task::DeploymentTask,
+        project_config::ProjectConfig, secretcli_util,
     },
 };
 use clap::Args;
@@ -61,8 +59,8 @@ impl Executable for AutoDeployCommand {
                 password,
                 &config,
             )?;
-            let full_store_tx = secretcli_util::query_tx(&response.txhash)?;
-            let code_id = full_store_tx
+            // let full_tx = secretcli_util::query_tx(&response.txhash)?;
+            let code_id = response
                 .logs
                 .last()
                 .unwrap()
@@ -144,10 +142,9 @@ impl Executable for AutoDeployCommand {
                     task.coins.clone(),
                     password,
                     &config,
-                )?
-                .txhash;
-                let init_full_tx = secretcli_util::query_tx(&init_tx)?;
-                let addr = init_full_tx
+                )?;
+                // let init_full_tx = secretcli_util::query_tx(&init_tx)?;
+                let addr = init_tx
                     .logs
                     .first()
                     .unwrap()
@@ -179,6 +176,7 @@ impl Executable for AutoDeployCommand {
                 }
                 let t = t.unwrap();
                 contract_addr = current_network.get(&task.id).unwrap().clone();
+                t.contract_address = Some(contract_addr.clone());
                 let tx = secretcli_util::migrate_contract(
                     &contract_addr,
                     &t.code_id.as_ref().unwrap(),
@@ -187,7 +185,7 @@ impl Executable for AutoDeployCommand {
                     password,
                     &config,
                 )?;
-                let _full_tx = secretcli_util::query_tx(&tx.txhash)?;
+                // let _full_tx = secretcli_util::query_tx(&tx.txhash)?;
                 println!(
                     "\t{} (CODE ID: {} => {}) -- '{}'",
                     "Done.".bright_green(),

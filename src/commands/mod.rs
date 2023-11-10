@@ -5,5 +5,6 @@ pub mod node;
 pub mod test;
 pub mod autodeploy;
 pub mod config;
+pub mod wasm;
 
 pub use build::*;

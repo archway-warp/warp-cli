@@ -28,4 +28,10 @@ pub enum WarpError {
     JsonError(#[from] serde_json::Error),
     #[error("Error: Transaction reverted: {1} (Tx: {0})")]
     TxFailed(String, String),
+    #[error("Error: Wallet not specified")]
+    UnspecifiedWallet,
+    #[error("Error: {0}")]
+    UnderlyingCliError(String),
+    #[error("Error: Can't match the following ID: '{0}'")]
+    ContractIdNotFound(String),
 }
