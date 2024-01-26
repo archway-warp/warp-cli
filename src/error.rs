@@ -10,28 +10,28 @@ pub enum WarpError {
     TomlSerializationError(#[from] toml::ser::Error),
     #[error("Toml Deserialization Error: {0:?}")]
     TomlDeserializationError(#[from] toml::de::Error),
-    #[error("Error: Project file can't be found. You have to navigate to a valid Warp project directory.")]
+    #[error("Project file can't be found. You have to navigate to a valid Warp project directory.")]
     ProjectFileNotFound,
-    #[error("Error: Another Warp project already exists at '{0}'.")]
+    #[error("Another Warp project already exists at '{0}'.")]
     ProjectFileAlreadyExists(PathBuf),
-    #[error("Error: Starting the local node failed with exit code: {0}")]
+    #[error("Starting the local node failed with exit code: {0}")]
     NodeStartupError(ExitStatus),
-    #[error("Error: Workspace initialization failed.")]
+    #[error("Workspace initialization failed.")]
     InitFailed,
-    #[error("Error: Regex parser threw an error: {0}")]
+    #[error("Regex parser threw an error: {0}")]
     RegexError(#[from] regex::Error),
-    #[error("Error: Could not clone the contract template.")]
+    #[error("Could not clone the contract template.")]
     ContractTemplateCloneFailed,
-    #[error("Error: Could not parse the UTF8 string: {0}")]
+    #[error("Could not parse the UTF8 string: {0}")]
     FromUTF8Error(#[from] FromUtf8Error),
-    #[error("Error: {0}")]
+    #[error("{0}")]
     JsonError(#[from] serde_json::Error),
-    #[error("Error: Transaction reverted: {1} (Tx: {0})")]
+    #[error("Transaction reverted: {1} (Tx: {0})")]
     TxFailed(String, String),
-    #[error("Error: Wallet not specified")]
+    #[error("Wallet not specified")]
     UnspecifiedWallet,
-    #[error("Error: {0}")]
+    #[error("{0}")]
     UnderlyingCliError(String),
-    #[error("Error: Can't match the following ID: '{0}'")]
+    #[error("Can't match the following ID: '{0}'")]
     ContractIdNotFound(String),
 }

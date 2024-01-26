@@ -5,6 +5,8 @@ mod error;
 mod executable;
 mod utils;
 
+use std::error::Error;
+
 use clap::{command, Parser, Subcommand};
 use commands::{
     autodeploy::AutoDeployCommand, build::BuildCommand, config::ConfigCommand, init::InitCommand,
@@ -12,6 +14,7 @@ use commands::{
 };
 use error::WarpError;
 use executable::Executable;
+use owo_colors::OwoColorize;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -46,7 +49,7 @@ fn main() -> Result<(), WarpError> {
 
     // You can check for the existence of subcommands, and if found use their
     // matches just as you would the top level cmd
-    match &cli.command {
+    let result = match &cli.command {
         Commands::Deploy(x) => x.execute(),
         Commands::Init(x) => x.execute(),
         Commands::New(x) => x.execute(),
@@ -55,6 +58,9 @@ fn main() -> Result<(), WarpError> {
         Commands::Node(x) => x.execute(),
         Commands::Config(x) => x.execute(),
         Commands::Wasm(x) => x.execute(),
-    }?;
+    };
+    if let Err(x) = result {
+        println!("{} {}", "Error!".red(), x.to_string().bright_red());
+    }
     Ok(())
 }
