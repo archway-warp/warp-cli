@@ -5,13 +5,16 @@ mod error;
 mod executable;
 mod utils;
 
+use std::error::Error;
+
 use clap::{command, Parser, Subcommand};
 use commands::{
     autodeploy::AutoDeployCommand, build::BuildCommand, config::ConfigCommand, init::InitCommand,
-    new::NewCommand, node::NodeCommand, test::TestCommand,
+    new::NewCommand, node::NodeCommand, test::TestCommand, wasm::WasmCommand,
 };
 use error::WarpError;
 use executable::Executable;
+use owo_colors::OwoColorize;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -35,8 +38,10 @@ enum Commands {
     New(NewCommand),
     /// [WIP] Start the local validator node
     Node(NodeCommand),
-    /// [WIP] Run the JavaScript tests from the '/tests/' directory
+    /// Run the JavaScript tests from the '/tests/' directory
     Test(TestCommand),
+    /// Wasm commands for interacting with deployed contracts
+    Wasm(WasmCommand),
 }
 
 fn main() -> Result<(), WarpError> {
@@ -44,7 +49,7 @@ fn main() -> Result<(), WarpError> {
 
     // You can check for the existence of subcommands, and if found use their
     // matches just as you would the top level cmd
-    match &cli.command {
+    let result = match &cli.command {
         Commands::Deploy(x) => x.execute(),
         Commands::Init(x) => x.execute(),
         Commands::New(x) => x.execute(),
@@ -52,6 +57,10 @@ fn main() -> Result<(), WarpError> {
         Commands::Test(x) => x.execute(),
         Commands::Node(x) => x.execute(),
         Commands::Config(x) => x.execute(),
-    }?;
+        Commands::Wasm(x) => x.execute(),
+    };
+    if let Err(x) = result {
+        println!("{} {}", "Error!".red(), x.to_string().bright_red());
+    }
     Ok(())
 }

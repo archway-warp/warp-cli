@@ -1,3 +1,7 @@
+# v0.2.2:
+
+- Added two commands for execution and querying contract information
+
 # v0.2.0:
 
 - Added Constantine-3 support

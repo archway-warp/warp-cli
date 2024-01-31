@@ -2,12 +2,7 @@ use std::process::Command;
 
 pub use clap::{arg, Args};
 
-use crate::{
-    commands::config::OptimizerBackend,
-    error::WarpError,
-    executable::Executable,
-    utils::{project_config::ProjectConfig, secretcli_util},
-};
+use crate::{error::WarpError, executable::Executable, utils::project_config::ProjectConfig};
 
 #[derive(Args)]
 pub struct BuildCommand {
