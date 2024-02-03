@@ -32,15 +32,17 @@ fn get_common_cli_args<'a, 'b>(
     if tx {
         let fee: EstimateFeesResponse = get_estimated_fee(config).unwrap();
         let mut tx_args = vec![
-            "--gas".to_string(),
-            if store { "2435155" } else { "634263" }.to_string(),
             "-y".to_string(),
             "-b".to_string(),
             "block".to_string(),
             "--gas".to_string(),
             "auto".to_string(),
             "--gas-adjustment".to_string(),
-            "1.4".to_string(),
+            if store {
+                "2".to_string()
+            } else {
+                "1.4".to_string()
+            },
             "--gas-prices".to_string(),
             fee.get_gas_price(),
         ];
@@ -49,12 +51,13 @@ fn get_common_cli_args<'a, 'b>(
     args
 }
 pub fn get_estimated_fee(config: &ProjectConfig) -> Result<EstimateFeesResponse, WarpError> {
-    let cmd = Command::new("archwayd")
-        .args(vec!["q", "rewards", "estimate-fees", "1"])
+    let mut cmd = Command::new("archwayd");
+    cmd.args(vec!["q", "rewards", "estimate-fees", "1"])
         .args(get_common_cli_args(false, true, false, config))
-        .stdin(Stdio::inherit())
-        .output()?;
-    let tx = cmd.stdout;
+        .stdin(Stdio::inherit());
+    let output = cmd.output()?;
+
+    let tx = output.stdout;
     let response = serde_json::from_slice::<EstimateFeesResponse>(&tx)?;
     Ok(response)
 }
