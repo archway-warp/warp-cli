@@ -65,4 +65,12 @@ pub trait ChainProfile {
         config: &ProjectConfig,
     ) -> Result<Value, WarpError>;
     fn init_project(&self, dir: &PathBuf) -> Result<(), WarpError>;
+    fn new_contract(
+        &self,
+        contract_name: &str,
+        contract_dir: &PathBuf,
+        project_root: &PathBuf,
+    ) -> Result<(), WarpError>;
+
+    fn get_node_docker_command(&self, container: Option<String>, config: &ProjectConfig) -> String;
 }

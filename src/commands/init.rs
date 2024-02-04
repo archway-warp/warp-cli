@@ -1,10 +1,8 @@
 use std::path::PathBuf;
 
 use crate::{
-    chains::chain_profile::ChainProfile,
-    error::WarpError,
-    executable::Executable,
-    utils::{self, project_config::ProjectConfig},
+    chains::chain_profile::ChainProfile, error::WarpError, executable::Executable,
+    utils::project_config::ProjectConfig,
 };
 use clap::Args;
 use owo_colors::OwoColorize;

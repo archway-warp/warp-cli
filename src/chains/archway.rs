@@ -1,7 +1,5 @@
 use std::{
-    path::PathBuf,
-    process::{Command, Stdio},
-    time::Duration,
+    fs::File, io::Write, path::PathBuf, process::{Command, Stdio}, time::Duration
 };
 
 use serde_json::Value;
@@ -11,6 +9,7 @@ use crate::{
         estimate_fees::EstimateFeesResponse, keys_show::KeysShowResponse, tx_query::TxQueryResponse,
     },
     error::WarpError,
+    utils::file_util,
 };
 
 use crate::utils::{command_util::CommandWithInput, project_config::ProjectConfig};
@@ -279,7 +278,7 @@ impl ChainProfile for ArchwayProfile {
                 .stdin(Stdio::inherit())
                 .output()?;
             let tx = cmd.stdout;
-            if cmd.stderr.len() > 0 && retries > 0 {
+            if !cmd.stderr.is_empty() && retries > 0 {
                 // crude but will do for beta
                 retries -= 1;
                 std::thread::sleep(Duration::from_millis(1600));
@@ -318,7 +317,7 @@ impl ChainProfile for ArchwayProfile {
             return Err(WarpError::UnderlyingCliError(msg));
         }
         let response: Value = serde_json::from_slice(tx.as_slice())?;
-        return Ok(response);
+        Ok(response)
     }
 
     fn init_project(&self, dir: &PathBuf) -> Result<(), WarpError> {
@@ -335,5 +334,67 @@ impl ChainProfile for ArchwayProfile {
         } else {
             return Err(WarpError::InitFailed);
         }
+    }
+
+    fn new_contract(
+        &self,
+        contract_name: &str,
+        contract_dir: &PathBuf,
+        project_root: &PathBuf,
+    ) -> Result<(), WarpError> {
+        println!("[1/2] Downloading contract files...");
+        std::fs::create_dir_all(contract_dir.clone())?;
+        let clone = std::process::Command::new("git")
+            .args(vec![
+                "clone",
+                "--depth=1",
+                "https://github.com/archway-warp/contract-template.git",
+                contract_dir.clone().as_os_str().to_str().unwrap(),
+                "-q",
+            ])
+            .spawn()?
+            .wait()?;
+        if !clone.success() {
+            return Err(WarpError::ContractTemplateCloneFailed);
+        }
+
+        std::fs::remove_dir_all(contract_dir.clone().join(".git"))?;
+        std::fs::remove_file(contract_dir.clone().join("README.md"))?;
+        let cargo_path = contract_dir.clone().join("Cargo.toml");
+        file_util::replace_in_file(cargo_path, "<CONTRACT_NAME>", &contract_name)?;
+
+        let lib_path = contract_dir.clone().join("src").join("contract.rs");
+        file_util::replace_in_file(lib_path, "<CONTRACT_NAME>", &contract_name)?;
+
+        let schema_path = contract_dir.clone().join("examples").join("schema.rs");
+        file_util::replace_in_file(schema_path, "<CONTRACT_NAME>", &contract_name)?;
+
+        let shared_path = project_root.clone().join("packages").join("shared");
+        let msg_path = shared_path
+            .clone()
+            .join("src")
+            .join(&contract_name)
+            .join("msg.rs");
+        std::fs::create_dir_all(msg_path.clone().parent().unwrap())?;
+        let mod_path = msg_path.clone().parent().unwrap().join("mod.rs");
+        std::fs::write(msg_path, crate::consts::MSG_FILE)?;
+        std::fs::write(mod_path, "pub mod msg;")?;
+        let lib_path = shared_path.clone().join("src").join("lib.rs");
+        let mut lib_file = File::options().write(true).append(true).open(lib_path)?;
+        writeln!(&mut lib_file, "pub mod {};", &contract_name)?;
+        println!("[2/2] Building the workspace...");
+        std::process::Command::new("cargo")
+            .arg("build")
+            .current_dir(project_root)
+            .spawn()?
+            .wait()?;
+        Ok(())
+    }
+
+    fn get_node_docker_command(&self, container: Option<String>, config: &ProjectConfig) -> String {
+        format!("docker run -it -p 9091:9091 -p 26657:26657 -p 26656:26656 -p 1317:1317 -p 5000:5000 -v {0}:/root/code --name {1} ghcr.io/scrtlabs/localsecret:v1.5.1",
+            std::env::current_dir().unwrap().to_str().unwrap(), 
+            container.clone().unwrap_or_else(|| config.tests.test_container_name.clone())
+        )
     }
 }

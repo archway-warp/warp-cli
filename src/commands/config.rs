@@ -102,22 +102,19 @@ impl Executable for ConfigCommand {
             if modify_values {
                 let params = x.network_params();
                 config.network = params;
-                match x {
-                    NetworkConfig::Mainnet => {
-                        println!("");
-                        println!(
-                            "{}",
-                            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+                if let NetworkConfig::Mainnet = x {
+                    println!("");
+                    println!(
+                        "{}",
+                        "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ⣿⣿⣿⣿⣿⣿⡿⠛⠉⠉⠉⠉⠛⢿⣿⣿⣿⣿⣿⣿
 ⣿⣿⣿⣿⣿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠙⣿⣿⣿⣿⣿
 ⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿
 ⣿⣿⣿⣿⡇⠀⣠⣴⣾⣿⣿⣷⣦⣄⠀⢸⣿⣿⣿⣿
 ⣿⣿⣿⣿⡇⣼⣿⣿⣿⣿⣿⣿⣿⣿⣧⢸⣿⣿⣿⣿
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿"
-                                .color(CssColors::DarkOrange)
-                        );
-                    }
-                    _ => {}
+                            .color(CssColors::DarkOrange)
+                    );
                 }
             }
             println!(

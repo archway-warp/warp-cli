@@ -1,4 +1,4 @@
-pub const MSG_FILE: &'static str = "use schemars::JsonSchema;
+pub const MSG_FILE: & str = "use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use cosmwasm_std::{Addr, CanonicalAddr};
 

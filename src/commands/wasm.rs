@@ -97,14 +97,14 @@ impl Executable for WasmCommand {
                 profile.execute_contract(
                     &contract_address,
                     &x.arguments,
-                    &from,
+                    from,
                     password,
                     &config,
                 )?;
             }
             WasmSubcommand::Query(x) => {
                 let result =
-                    profile.query_contract_smart(&contract_address, &x.arguments, &config)?;
+                    profile.query_contract_smart(contract_address, &x.arguments, &config)?;
                 println!("{result}");
             }
         }

@@ -1,8 +1,4 @@
-use std::{
-    fs::File,
-    io::Write,
-    path::{Path, PathBuf},
-};
+use std::path::PathBuf;
 
 use crate::{
     chains::chain_profile::ChainProfile,
@@ -28,7 +24,7 @@ impl Executable for NewCommand {
         &self,
         project_root: Option<PathBuf>,
         config: Option<ProjectConfig>,
-        _profile: &Box<dyn ChainProfile>,
+        profile: &Box<dyn ChainProfile>,
     ) -> Result<(), WarpError> {
         if project_root.is_none() {
             return Err(WarpError::ProjectFileNotFound);
@@ -37,49 +33,7 @@ impl Executable for NewCommand {
         let mut config = config.unwrap().clone();
 
         let contract_name = Self::optimize_for_path(&self.name)?;
-        println!("[1/3] Downloading contract files...");
         let contract_dir = project_root.join("contracts").join(&contract_name);
-        std::fs::create_dir_all(contract_dir.clone())?;
-        let clone = std::process::Command::new("git")
-            .args(vec![
-                "clone",
-                "--depth=1",
-                "https://github.com/archway-warp/contract-template.git",
-                contract_dir.clone().as_os_str().to_str().unwrap(),
-                "-q",
-            ])
-            .spawn()?
-            .wait()?;
-        if !clone.success() {
-            return Err(WarpError::ContractTemplateCloneFailed);
-        }
-
-        std::fs::remove_dir_all(contract_dir.clone().join(".git"))?;
-        std::fs::remove_file(contract_dir.clone().join("README.md"))?;
-        let cargo_path = contract_dir.clone().join("Cargo.toml");
-        Self::replace_in_file(cargo_path, "<CONTRACT_NAME>", &contract_name)?;
-
-        let lib_path = contract_dir.clone().join("src").join("contract.rs");
-        Self::replace_in_file(lib_path, "<CONTRACT_NAME>", &contract_name)?;
-
-        let schema_path = contract_dir.clone().join("examples").join("schema.rs");
-        Self::replace_in_file(schema_path, "<CONTRACT_NAME>", &contract_name)?;
-
-        let shared_path = project_root.clone().join("packages").join("shared");
-        let msg_path = shared_path
-            .clone()
-            .join("src")
-            .join(&contract_name)
-            .join("msg.rs");
-        std::fs::create_dir_all(msg_path.clone().parent().unwrap())?;
-        let mod_path = msg_path.clone().parent().unwrap().join("mod.rs");
-        std::fs::write(msg_path, crate::consts::MSG_FILE)?;
-        std::fs::write(mod_path, "pub mod msg;")?;
-        let lib_path = shared_path.clone().join("src").join("lib.rs");
-        let mut lib_file = File::options().write(true).append(true).open(lib_path)?;
-        writeln!(&mut lib_file, "pub mod {};", &contract_name)?;
-
-        println!("[2/3] Updating the deployment script...");
         let deploy_step = AutoDeployStep {
             id: format!("$_{}", &self.name),
             contract: format!("artifacts/{}.wasm", &self.name),
@@ -90,13 +44,8 @@ impl Executable for NewCommand {
             coins: None,
         };
         config.autodeploy.steps.push(deploy_step);
+        profile.new_contract(&contract_name, &contract_dir, &project_root)?;
         config.save_project_config()?;
-        println!("[2/2] Building the workspace...");
-        std::process::Command::new("cargo")
-            .arg("build")
-            .current_dir(project_root)
-            .spawn()?
-            .wait()?;
 
         Ok(())
     }
@@ -107,17 +56,6 @@ impl NewCommand {
         let rx = Regex::new(r"[^a-zA-Z0-9_]")?;
         let replaced = rx.replace_all(s, "_");
         Ok(replaced.trim_matches('_').to_lowercase().to_owned()) // we're not doing Python here
-    }
-
-    fn replace_in_file<P>(path: P, find: &str, replace: &str) -> Result<(), WarpError>
-    where
-        P: AsRef<Path>,
-    {
-        let mut content = std::fs::read_to_string(&path)?;
-        content = content.replace(&find, &replace);
-        std::fs::write(&path, content)?;
-
-        Ok(())
     }
 }
 mod tests {
