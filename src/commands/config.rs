@@ -1,9 +1,12 @@
+use std::path::PathBuf;
+
 pub use clap::{arg, Args};
 use clap::{Subcommand, ValueEnum};
 use owo_colors::{CssColors, OwoColorize};
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    chains::chain_profile::ChainProfile,
     error::WarpError,
     executable::Executable,
     utils::project_config::{Network, ProjectConfig},
@@ -55,8 +58,17 @@ pub enum NetworkConfig {
 }
 
 impl Executable for ConfigCommand {
-    fn execute(&self) -> Result<(), WarpError> {
-        let (root, mut config) = ProjectConfig::parse_project_config()?;
+    fn execute(
+        &self,
+        project_root: Option<PathBuf>,
+        config: Option<ProjectConfig>,
+        _profile: &Box<dyn ChainProfile>,
+    ) -> Result<(), WarpError> {
+        if project_root.is_none() {
+            return Err(WarpError::ProjectFileNotFound);
+        };
+        let mut config = config.unwrap().clone();
+
         let modify_values: bool;
         let args = match &self.subcommand {
             SetSubcommand::Set(x) => {

@@ -1,10 +1,13 @@
+use std::path::PathBuf;
+
 use clap::Subcommand;
 pub use clap::{arg, Args};
 
 use crate::{
+    chains::chain_profile::ChainProfile,
     error::WarpError,
     executable::Executable,
-    utils::{deployment_result::DeploymentResult, project_config::ProjectConfig, secretcli_util},
+    utils::{deployment_result::DeploymentResult, project_config::ProjectConfig},
 };
 
 #[derive(Args)]
@@ -49,9 +52,18 @@ pub struct WasmQueryArgs {
 }
 
 impl Executable for WasmCommand {
-    fn execute(&self) -> Result<(), crate::error::WarpError> {
+    fn execute(
+        &self,
+        project_root: Option<PathBuf>,
+        config: Option<ProjectConfig>,
+        profile: &Box<dyn ChainProfile>,
+    ) -> Result<(), crate::error::WarpError> {
         DeploymentResult::exists()?;
-        let (_, config) = ProjectConfig::parse_project_config()?;
+        if project_root.is_none() {
+            return Err(WarpError::ProjectFileNotFound);
+        };
+        //let project_root = project_root.unwrap();
+        let config = config.unwrap();
         let (_, mut deployments) = DeploymentResult::parse()?;
 
         // Translate contract address
@@ -82,7 +94,7 @@ impl Executable for WasmCommand {
                     Some(password.as_str())
                 };
 
-                secretcli_util::execute_contract(
+                profile.execute_contract(
                     &contract_address,
                     &x.arguments,
                     &from,
@@ -92,7 +104,7 @@ impl Executable for WasmCommand {
             }
             WasmSubcommand::Query(x) => {
                 let result =
-                    secretcli_util::query_contract_smart(&contract_address, &x.arguments, &config)?;
+                    profile.query_contract_smart(&contract_address, &x.arguments, &config)?;
                 println!("{result}");
             }
         }

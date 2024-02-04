@@ -1,12 +1,12 @@
 mod archway;
+pub mod chains;
 mod commands;
 mod consts;
 mod error;
 mod executable;
 mod utils;
 
-use std::error::Error;
-
+use chains::{archway::ArchwayProfile, chain_profile::ChainProfile};
 use clap::{command, Parser, Subcommand};
 use commands::{
     autodeploy::AutoDeployCommand, build::BuildCommand, config::ConfigCommand, init::InitCommand,
@@ -47,17 +47,21 @@ enum Commands {
 fn main() -> Result<(), WarpError> {
     let cli = Cli::parse();
 
+    let (project_root, config) = utils::project_config::ProjectConfig::parse_project_config()
+        .map_or((None, None), |x| (Some(x.0), Some(x.1)));
+    let profile: Box<dyn ChainProfile> = Box::new(ArchwayProfile);
+
     // You can check for the existence of subcommands, and if found use their
     // matches just as you would the top level cmd
     let result = match &cli.command {
-        Commands::Deploy(x) => x.execute(),
-        Commands::Init(x) => x.execute(),
-        Commands::New(x) => x.execute(),
-        Commands::Build(x) => x.execute(),
-        Commands::Test(x) => x.execute(),
-        Commands::Node(x) => x.execute(),
-        Commands::Config(x) => x.execute(),
-        Commands::Wasm(x) => x.execute(),
+        Commands::Deploy(x) => x.execute(project_root, config, &profile),
+        Commands::Init(x) => x.execute(project_root, config, &profile),
+        Commands::New(x) => x.execute(project_root, config, &profile),
+        Commands::Build(x) => x.execute(project_root, config, &profile),
+        Commands::Test(x) => x.execute(project_root, config, &profile),
+        Commands::Node(x) => x.execute(project_root, config, &profile),
+        Commands::Config(x) => x.execute(project_root, config, &profile),
+        Commands::Wasm(x) => x.execute(project_root, config, &profile),
     };
     if let Err(x) = result {
         println!("{} {}", "Error!".red(), x.to_string().bright_red());

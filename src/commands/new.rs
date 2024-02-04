@@ -1,6 +1,11 @@
-use std::{fs::File, io::Write, path::Path};
+use std::{
+    fs::File,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use crate::{
+    chains::chain_profile::ChainProfile,
     error::WarpError,
     executable::Executable,
     utils::project_config::{AutoDeployStep, ProjectConfig},
@@ -19,11 +24,21 @@ pub struct NewCommand {
 }
 
 impl Executable for NewCommand {
-    fn execute(&self) -> Result<(), WarpError> {
-        let (root, mut config) = ProjectConfig::parse_project_config()?;
+    fn execute(
+        &self,
+        project_root: Option<PathBuf>,
+        config: Option<ProjectConfig>,
+        _profile: &Box<dyn ChainProfile>,
+    ) -> Result<(), WarpError> {
+        if project_root.is_none() {
+            return Err(WarpError::ProjectFileNotFound);
+        };
+        let project_root = project_root.unwrap();
+        let mut config = config.unwrap().clone();
+
         let contract_name = Self::optimize_for_path(&self.name)?;
         println!("[1/3] Downloading contract files...");
-        let contract_dir = root.join("contracts").join(&contract_name);
+        let contract_dir = project_root.join("contracts").join(&contract_name);
         std::fs::create_dir_all(contract_dir.clone())?;
         let clone = std::process::Command::new("git")
             .args(vec![
@@ -50,7 +65,7 @@ impl Executable for NewCommand {
         let schema_path = contract_dir.clone().join("examples").join("schema.rs");
         Self::replace_in_file(schema_path, "<CONTRACT_NAME>", &contract_name)?;
 
-        let shared_path = root.clone().join("packages").join("shared");
+        let shared_path = project_root.clone().join("packages").join("shared");
         let msg_path = shared_path
             .clone()
             .join("src")
@@ -79,7 +94,7 @@ impl Executable for NewCommand {
         println!("[2/2] Building the workspace...");
         std::process::Command::new("cargo")
             .arg("build")
-            .current_dir(root)
+            .current_dir(project_root)
             .spawn()?
             .wait()?;
 

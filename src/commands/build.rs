@@ -1,8 +1,11 @@
-use std::process::Command;
+use std::{path::PathBuf, process::Command};
 
 pub use clap::{arg, Args};
 
-use crate::{error::WarpError, executable::Executable, utils::project_config::ProjectConfig};
+use crate::{
+    chains::chain_profile::ChainProfile, error::WarpError, executable::Executable,
+    utils::project_config::ProjectConfig,
+};
 
 #[derive(Args)]
 pub struct BuildCommand {
@@ -12,8 +15,18 @@ pub struct BuildCommand {
 }
 
 impl Executable for BuildCommand {
-    fn execute(&self) -> Result<(), WarpError> {
-        let (root, config) = ProjectConfig::parse_project_config()?;
+    fn execute(
+        &self,
+        project_root: Option<PathBuf>,
+        config: Option<ProjectConfig>,
+        _profile: &Box<dyn ChainProfile>,
+    ) -> Result<(), WarpError> {
+        if project_root.is_none() {
+            return Err(WarpError::ProjectFileNotFound);
+        };
+        let project_root = project_root.unwrap();
+        let config = config.unwrap();
+
         if self.optimized {
             let rename_files: bool;
             let cmd_str = match config.tooling.optimizer_backend.as_str() {
@@ -24,8 +37,8 @@ impl Executable for BuildCommand {
                 _ => {
                     rename_files = false;
                     format!("docker run --rm -v {0}:/code --mount type=volume,source={1}_cache,target=/code/target --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry cosmwasm/workspace-optimizer:0.12.10", 
-                    &root.to_str().unwrap(),
-                    &root.to_str().unwrap().rsplit("/").next().unwrap())
+                    &project_root.to_str().unwrap(),
+                    &project_root.to_str().unwrap().rsplit("/").next().unwrap())
                 }
             };
             let cmd_tokens = cmd_str.split(" ").collect::<Vec<&str>>();
@@ -33,12 +46,12 @@ impl Executable for BuildCommand {
             let cmd_args = cmd_tokens.iter().skip(1).map(|x| *x).collect::<Vec<&str>>();
 
             Command::new(cmd_name)
-                .current_dir(&root)
+                .current_dir(&project_root)
                 .args(cmd_args)
                 .spawn()?
                 .wait()?;
             if rename_files {
-                let artifacts = root.clone().join("artifacts");
+                let artifacts = project_root.clone().join("artifacts");
                 let dir = std::fs::read_dir(&artifacts)?;
                 // TODO: filter_map()
                 let files_to_rename = dir
