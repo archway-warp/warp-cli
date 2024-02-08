@@ -1,6 +1,7 @@
-pub const MSG_FILE: & str = "use schemars::JsonSchema;
+pub const MSG_FILE: &str = "use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use cosmwasm_std::{Addr, CanonicalAddr};
+use cosmwasm_schema::{QueryResponse, QueryResult};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -14,10 +15,11 @@ pub enum ExecuteMsg {
     ChangeOwner { addr: CanonicalAddr },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, QueryResponses)]
 #[serde(rename_all = \"snake_case\")]
 pub enum QueryMsg {
     // GetOwner returns the current owner of the contract
+    #[returns(OwnerResponse)]
     GetOwner {},
 }
 

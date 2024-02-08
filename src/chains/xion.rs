@@ -6,7 +6,7 @@ use serde_json::Value;
 
 use crate::{
     archway::{
-        estimate_fees::EstimateFeesResponse, keys_show::KeysShowResponse, tx_query::TxQueryResponse,
+        keys_show::KeysShowResponse, tx_query::TxQueryResponse,
     }, commands::config::NetworkConfig, error::WarpError, utils::{file_util, project_config::Network}
 };
 
@@ -14,26 +14,14 @@ use crate::utils::{command_util::CommandWithInput, project_config::ProjectConfig
 
 use super::chain_profile::ChainProfile;
 
-pub struct ArchwayProfile;
+pub struct XionProfile;
 
-impl ArchwayProfile {
-    
-    fn get_estimated_fee(&self, config: &ProjectConfig) -> Result<EstimateFeesResponse, WarpError> {
-        let mut cmd = Command::new("archwayd");
-        cmd.args(vec!["q", "rewards", "estimate-fees", "1"])
-        .args(self.get_common_cli_args(false, true, false, config))
-        .stdin(Stdio::inherit());
-    let output = cmd.output()?;
-    
-    let tx = output.stdout;
-    let response = serde_json::from_slice::<EstimateFeesResponse>(&tx)?;
-    Ok(response)
-}
+impl XionProfile {
 }
 
-impl ChainProfile for ArchwayProfile {
+impl ChainProfile for XionProfile {
     fn get_profile_name(&self) -> String {
-        "archway".to_string()
+        "xion".to_owned()
     }
 
     fn get_common_cli_args<'a, 'b>(
@@ -51,7 +39,6 @@ impl ChainProfile for ArchwayProfile {
             args.push(config.network.rpc_url.to_string());
         }
         if tx {
-            let fee: EstimateFeesResponse = self.get_estimated_fee(config).unwrap();
             let mut tx_args = vec![
                 "-y".to_string(),
                 "-b".to_string(),
@@ -65,7 +52,7 @@ impl ChainProfile for ArchwayProfile {
                     "1.4".to_string()
                 },
                 "--gas-prices".to_string(),
-                fee.get_gas_price(),
+                config.network.gas_prices.clone().unwrap_or("0.00025uxion".to_owned()),
             ];
             args.append(&mut tx_args);
         }
@@ -78,7 +65,7 @@ impl ChainProfile for ArchwayProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<KeysShowResponse, WarpError> {
-        let mut tx = Command::new("archwayd");
+        let mut tx = Command::new("xiond");
         tx.args(vec!["keys", "show", account_id])
             .args(self.get_common_cli_args(false, false, false, config))
             .stdout(Stdio::piped())
@@ -107,7 +94,7 @@ impl ChainProfile for ArchwayProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("archwayd");
+        let mut tx = Command::new("xiond");
         tx.args(vec!["tx", "wasm", "store", contract, "--from", from])
             .args(self.get_common_cli_args(true, true, true, config))
             .stdout(Stdio::piped())
@@ -144,7 +131,7 @@ impl ChainProfile for ArchwayProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("archwayd");
+        let mut tx = Command::new("xiond");
         tx.args(vec![
             "tx",
             "wasm",
@@ -191,7 +178,7 @@ impl ChainProfile for ArchwayProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("archwayd");
+        let mut tx = Command::new("xiond");
         tx.args(vec![
             "tx",
             "wasm",
@@ -233,7 +220,7 @@ impl ChainProfile for ArchwayProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("archwayd");
+        let mut tx = Command::new("xiond");
         tx.args(vec![
             "tx",
             "wasm",
@@ -275,7 +262,7 @@ impl ChainProfile for ArchwayProfile {
     ) -> Result<TxQueryResponse, WarpError> {
         let mut retries = 10;
         loop {
-            let cmd = Command::new("archwayd")
+            let cmd = Command::new("xiond")
                 .args(vec!["q", "tx", tx_hash])
                 .args(self.get_common_cli_args(false, true, false, config))
                 .stdin(Stdio::inherit())
@@ -302,7 +289,7 @@ impl ChainProfile for ArchwayProfile {
         query: &str,
         config: &ProjectConfig,
     ) -> Result<Value, WarpError> {
-        let cmd = Command::new("archwayd")
+        let cmd = Command::new("xiond")
             .args(vec![
                 "q",
                 "wasm",
@@ -327,7 +314,7 @@ impl ChainProfile for ArchwayProfile {
         println!("Initializing new workspace...");
         let cmd = Command::new("git")
             .arg("clone")
-            .arg("https://github.com/archway-warp/warp-template.git")
+            .arg("https://github.com/xion-warp/warp-template.git")
             .arg(dir.as_os_str())
             .stdout(Stdio::null())
             .spawn()?
@@ -351,7 +338,7 @@ impl ChainProfile for ArchwayProfile {
             .args(vec![
                 "clone",
                 "--depth=1",
-                "https://github.com/archway-warp/contract-template.git",
+                "https://github.com/xion-warp/contract-template.git",
                 contract_dir.clone().as_os_str().to_str().unwrap(),
                 "-q",
             ])
@@ -369,7 +356,7 @@ impl ChainProfile for ArchwayProfile {
         let lib_path = contract_dir.clone().join("src").join("contract.rs");
         file_util::replace_in_file(lib_path, "<CONTRACT_NAME>", &contract_name)?;
 
-        let schema_path = contract_dir.clone().join("examples").join("schema.rs");
+        let schema_path = contract_dir.clone().join("src").join("bin").join("schema.rs");
         file_util::replace_in_file(schema_path, "<CONTRACT_NAME>", &contract_name)?;
 
         let shared_path = project_root.clone().join("packages").join("shared");
@@ -403,22 +390,21 @@ impl ChainProfile for ArchwayProfile {
 
     fn network_params(&self, network_config: &NetworkConfig) -> Network {
         match network_config {
-            NetworkConfig::Mainnet => Network {
-                profile: self.get_profile_name(),
-                chain_id: "archway-1".to_owned(),
-                rpc_url: "https://rpc.mainnet.archway.io:443".to_owned(),
-                denom: "aarch".to_owned(),
-                gas_prices: None,
-            },
+            NetworkConfig::Mainnet => todo!("Mainnet not yet supported."),
             NetworkConfig::Testnet => Network {
                 profile: self.get_profile_name(),
-                chain_id: "constantine-3".to_owned(),
-                rpc_url: "https://rpc.constantine.archway.tech:443".to_owned(),
-                denom: "aconst".to_owned(),
-                gas_prices: None,
+                chain_id: "xion-local-testnet-1".to_owned(),
+                rpc_url: "https://rpc.xion-testnet-1.burnt.com:443".to_owned(),
+                denom: "uxion".to_owned(),
+                gas_prices: Some("0uxion".to_owned()),
             },
-            NetworkConfig::Local => todo!(),
+            NetworkConfig::Local => Network {
+                profile: self.get_profile_name(),
+                chain_id: "xion-local-testnet-1".to_owned(),
+                rpc_url: "".to_owned(), // TODO: Add local node URL
+                denom: "uxion".to_owned(),
+                gas_prices: Some("0.00025uxion".to_owned()),
+            },
         }
     }
-
 }

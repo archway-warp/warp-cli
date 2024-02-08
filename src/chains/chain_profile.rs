@@ -4,10 +4,12 @@ use serde_json::Value;
 
 use crate::archway::keys_show::KeysShowResponse;
 use crate::archway::tx_query::TxQueryResponse;
-use crate::utils::project_config::ProjectConfig;
+use crate::commands::config::NetworkConfig;
+use crate::utils::project_config::{Network, ProjectConfig};
 use crate::WarpError;
 
 pub trait ChainProfile {
+    fn get_profile_name(&self) -> String;
     fn get_common_cli_args<'a, 'b>(
         &self,
         tx: bool,
@@ -73,4 +75,6 @@ pub trait ChainProfile {
     ) -> Result<(), WarpError>;
 
     fn get_node_docker_command(&self, container: Option<String>, config: &ProjectConfig) -> String;
+
+    fn network_params(&self, network_config: &NetworkConfig) -> Network;
 }

@@ -49,19 +49,30 @@ fn main() -> Result<(), WarpError> {
 
     let (project_root, config) = utils::project_config::ProjectConfig::parse_project_config()
         .map_or((None, None), |x| (Some(x.0), Some(x.1)));
-    let profile: Box<dyn ChainProfile> = Box::new(ArchwayProfile);
-
+    let profile = if config.is_some() {
+        Some(match config.as_ref().unwrap().network.profile.as_str() {
+            "archway" => Box::new(ArchwayProfile) as Box<dyn ChainProfile>,
+            "xion" => Box::new(chains::xion::XionProfile) as Box<dyn ChainProfile>,
+            _ => panic!("Unknown profile"),
+        })
+    } else {
+        None
+    };
     // You can check for the existence of subcommands, and if found use their
     // matches just as you would the top level cmd
     let result = match &cli.command {
-        Commands::Deploy(x) => x.execute(project_root, config, &profile),
-        Commands::Init(x) => x.execute(project_root, config, &profile),
-        Commands::New(x) => x.execute(project_root, config, &profile),
-        Commands::Build(x) => x.execute(project_root, config, &profile),
-        Commands::Test(x) => x.execute(project_root, config, &profile),
-        Commands::Node(x) => x.execute(project_root, config, &profile),
-        Commands::Config(x) => x.execute(project_root, config, &profile),
-        Commands::Wasm(x) => x.execute(project_root, config, &profile),
+        Commands::Deploy(x) => x.execute(project_root, config, &profile.unwrap()),
+        Commands::Init(x) => x.execute(
+            project_root,
+            config,
+            &profile.unwrap_or(Box::new(ArchwayProfile) as Box<dyn ChainProfile>),
+        ),
+        Commands::New(x) => x.execute(project_root, config, &profile.unwrap()),
+        Commands::Build(x) => x.execute(project_root, config, &profile.unwrap()),
+        Commands::Test(x) => x.execute(project_root, config, &profile.unwrap()),
+        Commands::Node(x) => x.execute(project_root, config, &profile.unwrap()),
+        Commands::Config(x) => x.execute(project_root, config, &profile.unwrap()),
+        Commands::Wasm(x) => x.execute(project_root, config, &profile.unwrap()),
     };
     if let Err(x) = result {
         println!("{} {}", "Error!".red(), x.to_string().bright_red());
