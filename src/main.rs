@@ -9,8 +9,9 @@ mod utils;
 use chains::{archway::ArchwayProfile, chain_profile::ChainProfile};
 use clap::{command, Parser, Subcommand};
 use commands::{
-    autodeploy::AutoDeployCommand, build::BuildCommand, config::ConfigCommand, init::InitCommand,
-    new::NewCommand, node::NodeCommand, test::TestCommand, wasm::WasmCommand,
+    autodeploy::AutoDeployCommand, build::BuildCommand, config::ConfigCommand,
+    frontend::FrontendCommand, init::InitCommand, new::NewCommand, node::NodeCommand,
+    test::TestCommand, wasm::WasmCommand,
 };
 use error::WarpError;
 use executable::Executable;
@@ -34,6 +35,8 @@ enum Commands {
     Build(BuildCommand),
     /// Execute the 'Auto Deploy' script for the workspace (see Warp.toml)
     Deploy(AutoDeployCommand),
+    /// Initialize the frontend for the current workspace
+    Frontend(FrontendCommand),
     /// Scaffold a new contract
     New(NewCommand),
     /// [WIP] Start the local validator node
@@ -58,6 +61,16 @@ fn main() -> Result<(), WarpError> {
     } else {
         None
     };
+
+    match &cli.command {
+        Commands::Init(_) => (),
+        _ => {
+            if profile.is_none() {
+                return Err(WarpError::ProjectFileNotFound);
+            }
+        }
+    }
+
     // You can check for the existence of subcommands, and if found use their
     // matches just as you would the top level cmd
     let result = match &cli.command {
@@ -73,6 +86,7 @@ fn main() -> Result<(), WarpError> {
         Commands::Node(x) => x.execute(project_root, config, &profile.unwrap()),
         Commands::Config(x) => x.execute(project_root, config, &profile.unwrap()),
         Commands::Wasm(x) => x.execute(project_root, config, &profile.unwrap()),
+        Commands::Frontend(x) => x.execute(project_root, config, &profile.unwrap()),
     };
     if let Err(x) = result {
         println!("{} {}", "Error!".red(), x.to_string().bright_red());

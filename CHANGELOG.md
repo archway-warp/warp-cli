@@ -1,3 +1,13 @@
+# v0.3.0:
+
+- Added an abstraction layer for commands to implement different behavior for different chains
+- Abstracted Archway-specific functionalities away from the Warp core
+- Added XION module to Warp
+- Added `frontend` command for scaffolding a frontend quickstart for the project
+- Fixed error handling and display
+- Fixed gas-related issues on Archway
+- Optimized the commands to work seamlessly across multiple chains (for example: starting to build on Archway, then deploying to XION)
+
 # v0.2.2:
 
 - Added two commands for execution and querying contract information

@@ -160,21 +160,7 @@ impl Executable for AutoDeployCommand {
                     &config,
                 )?;
                 // let init_full_tx = profile.query_tx(&init_tx)?;
-                let addr = init_tx
-                    .logs
-                    .first()
-                    .unwrap()
-                    .events
-                    .first()
-                    .unwrap()
-                    .attributes
-                    .iter()
-                    .filter(|x| x.key.contains("address"))
-                    .collect::<Vec<_>>()
-                    .get(0)
-                    .unwrap()
-                    .value
-                    .clone();
+                let addr = profile.get_initialized_address(&init_tx);
                 t.contract_address = Some(addr.clone());
                 contract_addr = addr.clone();
                 println!(

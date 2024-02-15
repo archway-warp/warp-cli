@@ -2,6 +2,7 @@ use std::{
     fs::File, io::Write, path::PathBuf, process::{Command, Stdio}, time::Duration
 };
 
+use owo_colors::OwoColorize;
 use serde_json::Value;
 
 use crate::{
@@ -33,16 +34,18 @@ impl ChainProfile for XionProfile {
     ) -> Vec<String> {
         let mut args = vec!["--output".to_string(), "json".to_string()];
         if network {
-            args.push("--chain-id".to_string());
-            args.push(config.network.chain_id.to_string());
             args.push("--node".to_string());
             args.push(config.network.rpc_url.to_string());
+        }
+        if network && tx {
+            args.push("--chain-id".to_string());
+            args.push(config.network.chain_id.to_string());
         }
         if tx {
             let mut tx_args = vec![
                 "-y".to_string(),
                 "-b".to_string(),
-                "block".to_string(),
+                "sync".to_string(),
                 "--gas".to_string(),
                 "auto".to_string(),
                 "--gas-adjustment".to_string(),
@@ -117,6 +120,7 @@ impl ChainProfile for XionProfile {
         if response.code != 0 {
             return Err(WarpError::TxFailed(response.txhash, response.raw_log));
         }
+        let response = self.query_tx(&response.txhash, config)?;
         Ok(response)
     }
 
@@ -167,6 +171,7 @@ impl ChainProfile for XionProfile {
         if response.code != 0 {
             return Err(WarpError::TxFailed(response.txhash, response.raw_log));
         }
+        let response = self.query_tx(&response.txhash, config)?;
         Ok(response)
     }
 
@@ -208,6 +213,7 @@ impl ChainProfile for XionProfile {
         if response.code != 0 {
             return Err(WarpError::TxFailed(response.txhash, response.raw_log));
         }
+        let response = self.query_tx(&response.txhash, config)?;
         Ok(response)
     }
 
@@ -251,6 +257,7 @@ impl ChainProfile for XionProfile {
         if response.code != 0 {
             return Err(WarpError::TxFailed(response.txhash, response.raw_log));
         }
+        let response = self.query_tx(&response.txhash, config)?;
         Ok(response)
     }
 
@@ -268,13 +275,13 @@ impl ChainProfile for XionProfile {
                 .stdin(Stdio::inherit())
                 .output()?;
             let tx = cmd.stdout;
-            if !cmd.stderr.is_empty() && retries > 0 {
+            let stderr = cmd.stderr;
+            if !stderr.is_empty() && retries > 0 {
                 // crude but will do for beta
                 retries -= 1;
-                std::thread::sleep(Duration::from_millis(1600));
+                std::thread::sleep(Duration::from_millis(1958));
                 continue;
             }
-            println!("TX(L{}): {}", tx.len(), String::from_utf8(tx.clone())?);
             let response: TxQueryResponse = serde_json::from_slice(tx.as_slice())?;
             if response.code != 0 {
                 return Err(WarpError::TxFailed(response.txhash, response.raw_log));
@@ -393,7 +400,7 @@ impl ChainProfile for XionProfile {
             NetworkConfig::Mainnet => todo!("Mainnet not yet supported."),
             NetworkConfig::Testnet => Network {
                 profile: self.get_profile_name(),
-                chain_id: "xion-local-testnet-1".to_owned(),
+                chain_id: "xion-testnet-1".to_owned(),
                 rpc_url: "https://rpc.xion-testnet-1.burnt.com:443".to_owned(),
                 denom: "uxion".to_owned(),
                 gas_prices: Some("0uxion".to_owned()),
@@ -406,5 +413,25 @@ impl ChainProfile for XionProfile {
                 gas_prices: Some("0.00025uxion".to_owned()),
             },
         }
+    }
+
+    fn get_initialized_address(&self, tx: &TxQueryResponse) -> String {
+        tx.logs.first().unwrap().events.get(1).unwrap().attributes.get(0).unwrap().value.clone()
+    }
+
+    fn init_frontend(&self, dir: &PathBuf) -> Result<(), WarpError> {
+        let mut cmd = Command::new("git")
+            .arg("clone")
+            .arg("https://github.com/xion-warp/frontend")
+            .current_dir(dir)
+            .stdout(Stdio::null())
+            .spawn()?;
+        let cmd = cmd.wait()?;
+        if !cmd.success() {
+            return Err(WarpError::InitFailed);
+        }
+        println!("{} - run: {}", "Frontend initialized.", "yarn && yarn dev".bright_yellow());
+
+        Ok(())
     }
 }

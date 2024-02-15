@@ -1,3 +1,4 @@
+use core::panic;
 use std::{
     fs::File, io::Write, path::PathBuf, process::{Command, Stdio}, time::Duration
 };
@@ -421,4 +422,25 @@ impl ChainProfile for ArchwayProfile {
         }
     }
 
+    fn get_initialized_address(&self, tx: &TxQueryResponse) -> String {
+        tx
+                    .logs
+                    .first()
+                    .unwrap()
+                    .events
+                    .first()
+                    .unwrap()
+                    .attributes
+                    .iter()
+                    .filter(|x| x.key.contains("address"))
+                    .collect::<Vec<_>>()
+                    .get(0)
+                    .unwrap()
+                    .value
+                    .clone()
+    }
+
+    fn init_frontend(&self, dir: &PathBuf) -> Result<(), WarpError> {
+        panic!("Archway does not support frontend initialization (yet).");
+    }
 }

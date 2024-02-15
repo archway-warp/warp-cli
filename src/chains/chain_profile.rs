@@ -77,4 +77,6 @@ pub trait ChainProfile {
     fn get_node_docker_command(&self, container: Option<String>, config: &ProjectConfig) -> String;
 
     fn network_params(&self, network_config: &NetworkConfig) -> Network;
+    fn get_initialized_address(&self, tx: &TxQueryResponse) -> String;
+    fn init_frontend(&self, dir: &PathBuf) -> Result<(), WarpError>;
 }

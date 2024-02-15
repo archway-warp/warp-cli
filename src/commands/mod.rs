@@ -6,5 +6,6 @@ pub mod test;
 pub mod autodeploy;
 pub mod config;
 pub mod wasm;
+pub mod frontend;
 
 pub use build::*;
