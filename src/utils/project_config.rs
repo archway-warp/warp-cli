@@ -17,9 +17,12 @@ pub struct ProjectConfig {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Network {
+    /// This setting determines which blockchain the workspace is targetting
+    pub profile: String,
     pub chain_id: String,
     pub rpc_url: String,
     pub denom: String,
+    pub gas_prices: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -57,9 +60,11 @@ impl ProjectConfig {
     pub fn empty() -> ProjectConfig {
         ProjectConfig {
             network: Network {
+                profile: String::new(),
                 chain_id: String::new(),
                 rpc_url: String::new(),
                 denom: String::new(),
+                gas_prices: None,
             },
             tooling: Tooling {
                 optimizer_backend: String::new(),
@@ -76,30 +81,26 @@ impl ProjectConfig {
             },
         }
     }
-    pub fn generate_and_save(path: PathBuf) -> Result<(), WarpError> {
+    pub fn generate_and_save(path: PathBuf, network: Network) -> Result<(), WarpError> {
         let toml_path = path.join(CONFIG_FILENAME);
         if toml_path.exists() {
             return Err(WarpError::ProjectFileAlreadyExists(toml_path));
         }
         let config = Self {
-            network: Network {
-                rpc_url: "https://rpc.constantine.archway.tech:443".to_string(),
-                denom: "aconst".to_string(),
-                chain_id: "constantine-3".to_string(),
-            },
+            network,
             tooling: Tooling {
                 optimizer_backend: "default".to_owned(),
             },
             tests: TestConfig {
                 node_setup_time: 8,
                 test_container_name: format!(
-                    "secretdev-{}",
+                    "warp-dev-{}",
                     path.file_name().unwrap().to_str().unwrap()
                 ),
                 persist_image: false,
             },
             autodeploy: AutoDeploy {
-                account_id: String::new(),
+                account_id: "dev".to_owned(),
                 make_labels_unique: true,
                 steps: vec![],
             },

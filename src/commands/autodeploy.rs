@@ -1,12 +1,13 @@
-use std::time::Duration;
+use std::{path::PathBuf, time::Duration};
 
 use crate::{
+    chains::chain_profile::ChainProfile,
     commands::BuildCommand,
     error::WarpError,
     executable::Executable,
     utils::{
         deployment_result::DeploymentResult, deployment_task::DeploymentTask,
-        project_config::ProjectConfig, secretcli_util,
+        project_config::ProjectConfig,
     },
 };
 use clap::Args;
@@ -20,8 +21,18 @@ pub struct AutoDeployCommand {
 }
 
 impl Executable for AutoDeployCommand {
-    fn execute(&self) -> Result<(), WarpError> {
-        let (_root, config) = ProjectConfig::parse_project_config()?;
+    fn execute(
+        &self,
+        project_root: Option<PathBuf>,
+        config: Option<ProjectConfig>,
+        profile: &Box<dyn ChainProfile>,
+    ) -> Result<(), WarpError> {
+        if project_root.is_none() {
+            return Err(WarpError::ProjectFileNotFound);
+        };
+        let project_root = project_root.unwrap();
+        let config = config.unwrap();
+
         if config.autodeploy.account_id.is_empty() {
             println!(
                 "{} {}",
@@ -41,11 +52,16 @@ impl Executable for AutoDeployCommand {
         };
 
         if self.rebuild {
-            BuildCommand { optimized: true }.execute()?;
+            BuildCommand { optimized: true }.execute(
+                Some(project_root),
+                Some(config.clone()),
+                profile,
+            )?;
         }
 
-        let deployment_account =
-            secretcli_util::get_key_info(&config.autodeploy.account_id, password, &config)?.address;
+        let deployment_account = profile
+            .get_key_info(&config.autodeploy.account_id, password, &config)?
+            .address;
 
         println!("Deploying from: {}", &deployment_account);
 
@@ -53,13 +69,13 @@ impl Executable for AutoDeployCommand {
         let mut store_txs: Vec<DeploymentTask> = vec![];
         for step in config.autodeploy.steps.iter() {
             print!(" {} {}", "=>".bright_yellow(), step.contract.bright_blue());
-            let response = secretcli_util::store_contract(
+            let response = profile.store_contract(
                 &step.contract,
                 &config.autodeploy.account_id,
                 password,
                 &config,
             )?;
-            // let full_tx = secretcli_util::query_tx(&response.txhash)?;
+            // let full_tx = profile.query_tx(&response.txhash)?;
             let code_id = response
                 .logs
                 .last()
@@ -133,7 +149,7 @@ impl Executable for AutoDeployCommand {
                     break;
                 }
                 let t = t.unwrap();
-                let init_tx = secretcli_util::instantiate_contract(
+                let init_tx = profile.instantiate_contract(
                     t.code_id.as_ref().unwrap(),
                     &config.autodeploy.account_id,
                     &deployment_account,
@@ -143,22 +159,8 @@ impl Executable for AutoDeployCommand {
                     password,
                     &config,
                 )?;
-                // let init_full_tx = secretcli_util::query_tx(&init_tx)?;
-                let addr = init_tx
-                    .logs
-                    .first()
-                    .unwrap()
-                    .events
-                    .first()
-                    .unwrap()
-                    .attributes
-                    .iter()
-                    .filter(|x| x.key.contains("address"))
-                    .collect::<Vec<_>>()
-                    .get(0)
-                    .unwrap()
-                    .value
-                    .clone();
+                // let init_full_tx = profile.query_tx(&init_tx)?;
+                let addr = profile.get_initialized_address(&init_tx);
                 t.contract_address = Some(addr.clone());
                 contract_addr = addr.clone();
                 println!(
@@ -177,7 +179,7 @@ impl Executable for AutoDeployCommand {
                 let t = t.unwrap();
                 contract_addr = current_network.get(&task.id).unwrap().clone();
                 t.contract_address = Some(contract_addr.clone());
-                let tx = secretcli_util::migrate_contract(
+                let _tx = profile.migrate_contract(
                     &contract_addr,
                     &t.code_id.as_ref().unwrap(),
                     &config.autodeploy.account_id,
@@ -185,7 +187,7 @@ impl Executable for AutoDeployCommand {
                     password,
                     &config,
                 )?;
-                // let _full_tx = secretcli_util::query_tx(&tx.txhash)?;
+                // let _full_tx = profile.query_tx(&tx.txhash)?;
                 println!(
                     "\t{} (CODE ID: {} => {}) -- '{}'",
                     "Done.".bright_green(),

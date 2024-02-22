@@ -1,8 +1,11 @@
-use std::{process::Command, time::Duration};
+use std::{path::PathBuf, process::Command, time::Duration};
 
 use clap::Args;
 
-use crate::{error::WarpError, executable::Executable, utils::project_config::ProjectConfig};
+use crate::{
+    chains::chain_profile::ChainProfile, error::WarpError, executable::Executable,
+    utils::project_config::ProjectConfig,
+};
 
 use super::{node::NodeCommand, BuildCommand};
 
@@ -17,13 +20,22 @@ pub struct TestCommand {
 }
 
 impl Executable for TestCommand {
-    fn execute(&self) -> Result<(), WarpError> {
-        let (project_root, config) = ProjectConfig::parse_project_config()?;
+    fn execute(
+        &self,
+        project_root: Option<PathBuf>,
+        config: Option<ProjectConfig>,
+        profile: &Box<dyn ChainProfile>,
+    ) -> Result<(), WarpError> {
+        if project_root.is_none() {
+            return Err(WarpError::ProjectFileNotFound);
+        };
+        let project_root = project_root.unwrap();
+        let config = config.unwrap();
 
         // 1. Build the code if requested
         if self.rebuild {
             let cmd = BuildCommand { optimized: true };
-            cmd.execute()?;
+            cmd.execute(Some(project_root.clone()), Some(config.clone()), profile)?;
         }
 
         // 2. Set up the node unless specified otherwise
@@ -34,7 +46,7 @@ impl Executable for TestCommand {
                 container: Some(config.tests.test_container_name.clone()),
                 persistant: config.tests.persist_image,
             };
-            let status = cmd.execute();
+            let status = cmd.execute(Some(project_root.clone()), Some(config.clone()), profile);
             let is_conflict = match status {
                 Ok(_) => false,
                 Err(x) => {

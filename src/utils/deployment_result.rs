@@ -38,9 +38,7 @@ impl DeploymentResult {
     }
 
     pub fn network(&mut self, id: &str) -> &mut HashMap<String, String> {
-        self.deployment
-            .entry(id.to_string())
-            .or_insert(HashMap::new())
+        self.deployment.entry(id.to_string()).or_default()
     }
 
     pub fn save(&self) -> Result<(), WarpError> {

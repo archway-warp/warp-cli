@@ -1,12 +1,13 @@
+use std::path::PathBuf;
+
 pub use clap::{arg, Args};
 use clap::{Subcommand, ValueEnum};
-use owo_colors::{CssColors, OwoColorize};
+use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    error::WarpError,
-    executable::Executable,
-    utils::project_config::{Network, ProjectConfig},
+    chains::chain_profile::ChainProfile, error::WarpError, executable::Executable,
+    utils::project_config::ProjectConfig,
 };
 
 #[derive(Args)]
@@ -47,16 +48,23 @@ pub enum NetworkConfig {
     /// The long-awaited Archway Mainnet
     Mainnet,
     /// The official supported Archway Testnet
-    Constantine,
-    /// Experimental Archway Testnet
-    Titus,
+    Testnet,
     /// Local Archway Testnet (WIP)
     Local,
 }
 
 impl Executable for ConfigCommand {
-    fn execute(&self) -> Result<(), WarpError> {
-        let (root, mut config) = ProjectConfig::parse_project_config()?;
+    fn execute(
+        &self,
+        project_root: Option<PathBuf>,
+        config: Option<ProjectConfig>,
+        profile: &Box<dyn ChainProfile>,
+    ) -> Result<(), WarpError> {
+        if project_root.is_none() {
+            return Err(WarpError::ProjectFileNotFound);
+        };
+        let mut config = config.unwrap().clone();
+
         let modify_values: bool;
         let args = match &self.subcommand {
             SetSubcommand::Set(x) => {
@@ -88,25 +96,8 @@ impl Executable for ConfigCommand {
         // Network Config
         if let Some(x) = &args.network {
             if modify_values {
-                let params = x.network_params();
+                let params = profile.network_params(&x);
                 config.network = params;
-                match x {
-                    NetworkConfig::Mainnet => {
-                        println!("");
-                        println!(
-                            "{}",
-                            "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-⣿⣿⣿⣿⣿⣿⡿⠛⠉⠉⠉⠉⠛⢿⣿⣿⣿⣿⣿⣿
-⣿⣿⣿⣿⣿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠙⣿⣿⣿⣿⣿
-⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿
-⣿⣿⣿⣿⡇⠀⣠⣴⣾⣿⣿⣷⣦⣄⠀⢸⣿⣿⣿⣿
-⣿⣿⣿⣿⡇⣼⣿⣿⣿⣿⣿⣿⣿⣿⣧⢸⣿⣿⣿⣿
-⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿"
-                                .color(CssColors::DarkOrange)
-                        );
-                    }
-                    _ => {}
-                }
             }
             println!(
                 "{} {}: {}",
@@ -120,28 +111,5 @@ impl Executable for ConfigCommand {
             config.save_project_config()?;
         }
         Ok(())
-    }
-}
-
-impl NetworkConfig {
-    fn network_params(&self) -> Network {
-        match self {
-            NetworkConfig::Mainnet => Network {
-                chain_id: "archway-1".to_owned(),
-                rpc_url: "https://rpc.mainnet.archway.io:443".to_owned(),
-                denom: "aarch".to_owned(),
-            },
-            NetworkConfig::Constantine => Network {
-                chain_id: "constantine-3".to_owned(),
-                rpc_url: "https://rpc.constantine.archway.tech:443".to_owned(),
-                denom: "aconst".to_owned(),
-            },
-            NetworkConfig::Titus => Network {
-                chain_id: "titus-1".to_owned(),
-                rpc_url: " https://rpc.titus-1.archway.tech:443".to_owned(),
-                denom: "".to_owned(),
-            },
-            NetworkConfig::Local => todo!(),
-        }
     }
 }

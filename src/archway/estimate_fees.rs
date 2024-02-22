@@ -18,6 +18,7 @@ impl EstimateFeesResponse {
         )
     }
 
+    #[allow(dead_code)]
     pub fn get_fee(&self) -> String {
         let fee = self.estimated_fee.first();
         let fee = fee.unwrap();

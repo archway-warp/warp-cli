@@ -1,33 +1,31 @@
-pub const MSG_FILE: &'static str = "use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use cosmwasm_std::{Addr, CanonicalAddr};
+pub const MSG_FILE: &str = "use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Addr;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub owner: Addr,
     pub message: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = \"snake_case\")]
+#[cw_serde]
 pub enum ExecuteMsg {
-    ChangeOwner { addr: CanonicalAddr },
+    ChangeOwner { addr: Addr },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = \"snake_case\")]
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
     // GetOwner returns the current owner of the contract
+    #[returns(OwnerResponse)]
     GetOwner {},
 }
 
 // We define a custom struct for each query response
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct OwnerResponse {
-    pub owner: CanonicalAddr,
+    pub owner: Addr,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}
-
 ";
