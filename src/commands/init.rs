@@ -20,6 +20,7 @@ pub struct InitCommand {
 pub enum ChainParam {
     Archway,
     Xion,
+    Scrt,
 }
 
 impl ChainParam {
@@ -27,6 +28,7 @@ impl ChainParam {
         match self {
             ChainParam::Archway => Box::new(crate::chains::archway::ArchwayProfile),
             ChainParam::Xion => Box::new(crate::chains::xion::XionProfile),
+            ChainParam::Scrt => Box::new(crate::chains::secret::SecretNetworkProfile),
         }
     }
 }

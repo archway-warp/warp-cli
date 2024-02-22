@@ -56,6 +56,7 @@ fn main() -> Result<(), WarpError> {
         Some(match config.as_ref().unwrap().network.profile.as_str() {
             "archway" => Box::new(ArchwayProfile) as Box<dyn ChainProfile>,
             "xion" => Box::new(chains::xion::XionProfile) as Box<dyn ChainProfile>,
+            "scrt" => Box::new(chains::secret::SecretNetworkProfile) as Box<dyn ChainProfile>,
             _ => panic!("Unknown profile"),
         })
     } else {
