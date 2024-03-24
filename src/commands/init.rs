@@ -21,6 +21,7 @@ pub enum ChainParam {
     Archway,
     Xion,
     Scrt,
+    Sei,
 }
 
 impl ChainParam {
@@ -29,6 +30,7 @@ impl ChainParam {
             ChainParam::Archway => Box::new(crate::chains::archway::ArchwayProfile),
             ChainParam::Xion => Box::new(crate::chains::xion::XionProfile),
             ChainParam::Scrt => Box::new(crate::chains::secret::SecretNetworkProfile),
+            ChainParam::Sei => Box::new(crate::chains::sei::SeiProfile),
         }
     }
 }

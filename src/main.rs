@@ -57,6 +57,7 @@ fn main() -> Result<(), WarpError> {
             "archway" => Box::new(ArchwayProfile) as Box<dyn ChainProfile>,
             "xion" => Box::new(chains::xion::XionProfile) as Box<dyn ChainProfile>,
             "scrt" => Box::new(chains::secret::SecretNetworkProfile) as Box<dyn ChainProfile>,
+            "sei" => Box::new(chains::sei::SeiProfile) as Box<dyn ChainProfile>,
             _ => panic!("Unknown profile"),
         })
     } else {
