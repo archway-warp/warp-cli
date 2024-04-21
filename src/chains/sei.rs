@@ -386,10 +386,7 @@ impl ChainProfile for SeiProfile {
     }
 
     fn get_node_docker_command(&self, container: Option<String>, config: &ProjectConfig) -> String {
-        format!("docker run -it -p 9091:9091 -p 26657:26657 -p 26656:26656 -p 1317:1317 -p 5000:5000 -v {0}:/root/code --name {1} ghcr.io/scrtlabs/localsecret:v1.5.1",
-            std::env::current_dir().unwrap().to_str().unwrap(), 
-            container.clone().unwrap_or_else(|| config.tests.test_container_name.clone())
-        )
+        "docker run --rm -it -p 26657:26657 -p 1317:1317 -p 9090:9090 -p 9091 reyth3/sei-localnet".to_owned()
     }
 
     fn network_params(&self, network_config: &NetworkConfig) -> Network {
