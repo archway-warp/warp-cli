@@ -1,3 +1,9 @@
+# v0.4.0:
+
+- Added integration for the SEI blockchain
+- Added a local SEI node support
+- Fixed a few edge cases with local node and test commands crashing
+
 # v0.3.0:
 
 - Added an abstraction layer for commands to implement different behavior for different chains

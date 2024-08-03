@@ -4,8 +4,6 @@ _This tool is still in early stages of development. Please report all issues you
 
 **_All-in-one productivity toolchain for building, testing, and deploying CosmWasm Smart Contracts._**
 
-~~The tool has been adapted for the [EvolvNFT](https://evolvnft.com) project for the Archway Hackathon.~~
-
 **_NEW!_** Warp CLI is now a cross-chain project! 🎉 Conquering the entire Cosmos one zone at a time!
 
 We currently officially support the following L1 blockchains:
@@ -83,7 +81,7 @@ Options:
 
 ## Initialize a new workspace
 
-Use the `warp init <WORKSPACE_PATH> --chain <CHAIN>` command to create a new Cargo workspace preconfigured for use with the Warp CLI and the public testnet of your `<CHAIN>` of choiuce.
+Use the `warp init <WORKSPACE_PATH> --chain <CHAIN>` command to create a new Cargo workspace preconfigured for use with the Warp CLI and the public testnet of your `<CHAIN>` of choice.
 
 This command will clone the [warp-template](https://github.com/secret-warp/warp-template) repository and perform some basic setup. The workspace is set up to support the following features out of the box:
 
@@ -96,7 +94,7 @@ This command will clone the [warp-template](https://github.com/secret-warp/warp-
 With `warp new <CONTRACT_NAME>` you can quickly add a new contract to the workspace. The command clones the contract and takes care of all the boilerplate setup for you:
 
 - Adds the `msg.rs` module to the `shared` library for easy access by other contracts
-- (CURRENTLY IN DEVELOPMENT) Adds an entry to the AutoDeploy script in `Warp.toml` to prepare your contract for deployment (of course you will most likely need to modify it to get it to work with your contract later on)
+- Adds an entry to the AutoDeploy script in `Warp.toml` to prepare your contract for deployment (of course you will most likely need to modify it to get it to work with your contract later on)
 
 ## Building the Contracts
 
@@ -131,12 +129,14 @@ Options:
   -s, --skip-environment  Don't start a new instance of localsecret for this testing session
 ```
 
-Additionally, while I'm not great at TypeScript, I am also providing a small utility module (`tests/src/utils/archway.ts`) for making writing your tests as hastle-free as possible. Currently, the utility module contains the following utility functions:
+Additionally, while I'm not great at TypeScript, I am also providing a small utility module (`tests/src/utils/*.ts`) for making writing your tests as hassle-free as possible. For example, the utility module for Archway contracts contains the following utility functions:
+
+
 
 - `getConstantineConnection()` - Returns a connection to the LCD API of a testnet node
 - `getGenesisWallets()` - Returns an array of pre-loaded genesis wallets available in LocalSecret (you don't need to remember or look up the mnemonics)
 - `storeAndInitContract()` - A shorthand for uploading your `wasm` contract to the chain and making an instance of it. Useful for when you only need one instance of a given contract ever in your tests.
-- `requestFaucetCoinsConstantine` - a quick helper function to get some test tokens on theConstantine-2 network.
+- `requestFaucetCoinsConstantine` - a quick helper function to get some test tokens on the Constantine-2 network.
 
 ## Deploying your contracts
 
@@ -195,19 +195,19 @@ warp frontend
 
 # Roadmap
 
-The tool works, but it certainly can't be considered "stable". So, in addition to adding some killer features, there is a lot of refactoring and bugfixing to be done. Please report any issues you find!
+The tool works, but it certainly can't be considered a "stable release". This means that some breaking changes should still be expected in the future. In addition to adding some features, there is a lot of refactoring and bugfixing to be done. Please report any issues you find!
 
 ## Long-term goals
 
 Please keep in mind that at this early stage plans can still change quite a lot, depending on what features are needed the most. This is more of a guideline at the moment.
 
 - Improve the user experience - fix bugs and eliminate/decrease awkward wait times ⚙
-- ~~Implement contract migration mechanism as an optional or default behavior for `warp deploy` - priotity~~ ✅
+- ~~Implement contract migration mechanism as an optional or default behavior for `warp deploy` - priority~~ ✅
 - ~~Add support for scaffolding various frontend templates~~ ✅
-- Add support for templates in general - contractt templates for different versions of `cosmwasm`, or preconfigured CW standard contracts (`warp new main_token -t cw20-staking`?)
+- Add support for templates in general - contract templates for different versions of `cosmwasm`, or preconfigured CW standard contracts (`warp new main_token -t cw20-staking`?)
 - Find out a way to automate schema generation for contract messages as much as possible
 - Make interfacing with dockerized `localsecret` less verbose - `docker exec -it secretdev secret cli blah blah`
 - Write a proper documentation
 - ~~Automate the `archwayd` node configuration to reduce block time for testing purposes~~ ✅
 - Possibly remove the dependency on locally installed `archwayd` for a more 'portable' setup that works out of the box
-- ~~Add support for multiple chains~~✅
+- ~~Add support for multiple chains~~ ✅
