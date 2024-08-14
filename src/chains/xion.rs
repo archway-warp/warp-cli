@@ -21,6 +21,10 @@ impl XionProfile {
 }
 
 impl ChainProfile for XionProfile {
+    fn get_executable_name(&self) -> String {
+        "xiond".to_owned()
+    }
+
     fn get_profile_name(&self) -> String {
         "xion".to_owned()
     }
@@ -68,7 +72,7 @@ impl ChainProfile for XionProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<KeysShowResponse, WarpError> {
-        let mut tx = Command::new("xiond");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec!["keys", "show", account_id])
             .args(self.get_common_cli_args(false, false, false, config))
             .stdout(Stdio::piped())
@@ -97,7 +101,7 @@ impl ChainProfile for XionProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("xiond");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec!["tx", "wasm", "store", contract, "--from", from])
             .args(self.get_common_cli_args(true, true, true, config))
             .stdout(Stdio::piped())
@@ -135,7 +139,7 @@ impl ChainProfile for XionProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("xiond");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec![
             "tx",
             "wasm",
@@ -183,7 +187,7 @@ impl ChainProfile for XionProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("xiond");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec![
             "tx",
             "wasm",
@@ -226,7 +230,7 @@ impl ChainProfile for XionProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("xiond");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec![
             "tx",
             "wasm",
@@ -269,7 +273,7 @@ impl ChainProfile for XionProfile {
     ) -> Result<TxQueryResponse, WarpError> {
         let mut retries = 10;
         loop {
-            let cmd = Command::new("xiond")
+            let cmd = Command::new(self.get_executable_name())
                 .args(vec!["q", "tx", tx_hash])
                 .args(self.get_common_cli_args(false, true, false, config))
                 .stdin(Stdio::inherit())
@@ -296,7 +300,7 @@ impl ChainProfile for XionProfile {
         query: &str,
         config: &ProjectConfig,
     ) -> Result<Value, WarpError> {
-        let cmd = Command::new("xiond")
+        let cmd = Command::new(self.get_executable_name())
             .args(vec![
                 "q",
                 "wasm",

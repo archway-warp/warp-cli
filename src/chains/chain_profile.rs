@@ -9,6 +9,7 @@ use crate::utils::project_config::{Network, ProjectConfig};
 use crate::WarpError;
 
 pub trait ChainProfile {
+    fn get_executable_name(&self) -> String;
     fn get_profile_name(&self) -> String;
     fn get_common_cli_args<'a, 'b>(
         &self,

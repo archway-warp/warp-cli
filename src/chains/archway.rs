@@ -20,7 +20,7 @@ pub struct ArchwayProfile;
 impl ArchwayProfile {
     
     fn get_estimated_fee(&self, config: &ProjectConfig) -> Result<EstimateFeesResponse, WarpError> {
-        let mut cmd = Command::new("archwayd");
+        let mut cmd = Command::new(self.get_executable_name());
         cmd.args(vec!["q", "rewards", "estimate-fees", "1"])
         .args(self.get_common_cli_args(false, true, false, config))
         .stdin(Stdio::inherit());
@@ -33,6 +33,10 @@ impl ArchwayProfile {
 }
 
 impl ChainProfile for ArchwayProfile {
+    fn get_executable_name(&self) -> String {
+        "archwayd".to_string()
+    }
+
     fn get_profile_name(&self) -> String {
         "archway".to_string()
     }
@@ -79,7 +83,7 @@ impl ChainProfile for ArchwayProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<KeysShowResponse, WarpError> {
-        let mut tx = Command::new("archwayd");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec!["keys", "show", account_id])
             .args(self.get_common_cli_args(false, false, false, config))
             .stdout(Stdio::piped())
@@ -108,7 +112,7 @@ impl ChainProfile for ArchwayProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("archwayd");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec!["tx", "wasm", "store", contract, "--from", from])
             .args(self.get_common_cli_args(true, true, true, config))
             .stdout(Stdio::piped())
@@ -145,7 +149,7 @@ impl ChainProfile for ArchwayProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("archwayd");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec![
             "tx",
             "wasm",
@@ -192,7 +196,7 @@ impl ChainProfile for ArchwayProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("archwayd");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec![
             "tx",
             "wasm",
@@ -234,7 +238,7 @@ impl ChainProfile for ArchwayProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("archwayd");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec![
             "tx",
             "wasm",
@@ -276,7 +280,7 @@ impl ChainProfile for ArchwayProfile {
     ) -> Result<TxQueryResponse, WarpError> {
         let mut retries = 10;
         loop {
-            let cmd = Command::new("archwayd")
+            let cmd = Command::new(self.get_executable_name())
                 .args(vec!["q", "tx", tx_hash])
                 .args(self.get_common_cli_args(false, true, false, config))
                 .stdin(Stdio::inherit())
@@ -303,7 +307,7 @@ impl ChainProfile for ArchwayProfile {
         query: &str,
         config: &ProjectConfig,
     ) -> Result<Value, WarpError> {
-        let cmd = Command::new("archwayd")
+        let cmd = Command::new(self.get_executable_name())
             .args(vec![
                 "q",
                 "wasm",

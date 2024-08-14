@@ -21,6 +21,10 @@ impl SecretNetworkProfile {
 }
 
 impl ChainProfile for SecretNetworkProfile {
+    fn get_executable_name(&self) -> String {
+        "secretcli".to_owned()
+    }
+    
     fn get_profile_name(&self) -> String {
         "scrt".to_owned()
     }
@@ -68,7 +72,7 @@ impl ChainProfile for SecretNetworkProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<KeysShowResponse, WarpError> {
-        let mut tx = Command::new("secretcli");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec!["keys", "show", account_id])
             .args(self.get_common_cli_args(false, false, false, config))
             .stdout(Stdio::piped())
@@ -97,7 +101,7 @@ impl ChainProfile for SecretNetworkProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("secretcli");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec!["tx", "compute", "store", contract, "--from", from])
             .args(self.get_common_cli_args(true, true, true, config))
             .stdout(Stdio::piped())
@@ -135,7 +139,7 @@ impl ChainProfile for SecretNetworkProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("secretcli");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec![
             "tx",
             "compute",
@@ -171,7 +175,7 @@ impl ChainProfile for SecretNetworkProfile {
         json_data.as_slice().iter().for_each(|x| print!("{}", *x as char));
         let response: TxQueryResponse = serde_json::from_slice(json_data.as_slice())?;
         if response.code != 0 {
-            let tx = Command::new("secretcli")
+            let tx = Command::new(self.get_executable_name())
                 .args(vec!["q", "compute", "tx", &response.txhash])
                 .args(self.get_common_cli_args(false, true, false, config))
                 .stdin(Stdio::inherit())
@@ -191,7 +195,7 @@ impl ChainProfile for SecretNetworkProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("secretcli");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec![
             "tx",
             "compute",
@@ -234,7 +238,7 @@ impl ChainProfile for SecretNetworkProfile {
         password: Option<&str>,
         config: &ProjectConfig,
     ) -> Result<TxQueryResponse, WarpError> {
-        let mut tx = Command::new("secretcli");
+        let mut tx = Command::new(self.get_executable_name());
         tx.args(vec![
             "tx",
             "compute",
@@ -277,7 +281,7 @@ impl ChainProfile for SecretNetworkProfile {
     ) -> Result<TxQueryResponse, WarpError> {
         let mut retries = 10;
         loop {
-            let cmd = Command::new("secretcli")
+            let cmd = Command::new(self.get_executable_name())
                 .args(vec!["q", "tx", tx_hash])
                 .args(self.get_common_cli_args(false, true, false, config))
                 .stdin(Stdio::inherit())
@@ -304,7 +308,7 @@ impl ChainProfile for SecretNetworkProfile {
         query: &str,
         config: &ProjectConfig,
     ) -> Result<Value, WarpError> {
-        let cmd = Command::new("secretcli")
+        let cmd = Command::new(self.get_executable_name())
             .args(vec![
                 "q",
                 "compute",

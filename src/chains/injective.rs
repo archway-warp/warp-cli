@@ -1,36 +1,32 @@
 use std::{
-    fs::File,
-    io::Write,
-    path::PathBuf,
-    process::{Command, Stdio},
-    time::Duration,
+    fs::File, io::Write, path::PathBuf, process::{Command, Stdio}, time::Duration
 };
 
 use owo_colors::OwoColorize;
 use serde_json::Value;
 
 use crate::{
-    archway::{keys_show::KeysShowResponse, tx_query::TxQueryResponse},
-    commands::config::NetworkConfig,
-    error::WarpError,
-    utils::{file_util, project_config::Network},
+    archway::{
+        keys_show::KeysShowResponse, tx_query::TxQueryResponse,
+    }, commands::config::NetworkConfig, error::WarpError, utils::{file_util, project_config::Network}
 };
 
 use crate::utils::{command_util::CommandWithInput, project_config::ProjectConfig};
 
 use super::chain_profile::ChainProfile;
 
-pub struct SeiProfile;
+pub struct InjectiveProfile;
 
-impl SeiProfile {}
+impl InjectiveProfile {
+}
 
-impl ChainProfile for SeiProfile {
+impl ChainProfile for InjectiveProfile {
     fn get_executable_name(&self) -> String {
-        "seid".to_owned()
+        "injectived".to_owned()
     }
-
+    
     fn get_profile_name(&self) -> String {
-        "sei".to_owned()
+        "injective".to_owned()
     }
 
     fn get_common_cli_args<'a, 'b>(
@@ -53,7 +49,7 @@ impl ChainProfile for SeiProfile {
             let mut tx_args = vec![
                 "-y".to_string(),
                 "-b".to_string(),
-                "block".to_string(),
+                "sync".to_string(),
                 "--gas".to_string(),
                 "auto".to_string(),
                 "--gas-adjustment".to_string(),
@@ -63,11 +59,7 @@ impl ChainProfile for SeiProfile {
                     "1.4".to_string()
                 },
                 "--gas-prices".to_string(),
-                config
-                    .network
-                    .gas_prices
-                    .clone()
-                    .unwrap_or("0.00025uxion".to_owned()),
+                config.network.gas_prices.clone().unwrap_or("0.00025uxion".to_owned()),
             ];
             args.append(&mut tx_args);
         }
@@ -132,6 +124,7 @@ impl ChainProfile for SeiProfile {
         if response.code != 0 {
             return Err(WarpError::TxFailed(response.txhash, response.raw_log));
         }
+        let response = self.query_tx(&response.txhash, config)?;
         Ok(response)
     }
 
@@ -182,6 +175,7 @@ impl ChainProfile for SeiProfile {
         if response.code != 0 {
             return Err(WarpError::TxFailed(response.txhash, response.raw_log));
         }
+        let response = self.query_tx(&response.txhash, config)?;
         Ok(response)
     }
 
@@ -267,6 +261,7 @@ impl ChainProfile for SeiProfile {
         if response.code != 0 {
             return Err(WarpError::TxFailed(response.txhash, response.raw_log));
         }
+        let response = self.query_tx(&response.txhash, config)?;
         Ok(response)
     }
 
@@ -372,11 +367,7 @@ impl ChainProfile for SeiProfile {
         let lib_path = contract_dir.clone().join("src").join("contract.rs");
         file_util::replace_in_file(lib_path, "<CONTRACT_NAME>", &contract_name)?;
 
-        let schema_path = contract_dir
-            .clone()
-            .join("src")
-            .join("bin")
-            .join("schema.rs");
+        let schema_path = contract_dir.clone().join("src").join("bin").join("schema.rs");
         file_util::replace_in_file(schema_path, "<CONTRACT_NAME>", &contract_name)?;
 
         let shared_path = project_root.clone().join("packages").join("shared");
@@ -402,58 +393,55 @@ impl ChainProfile for SeiProfile {
     }
 
     fn get_node_docker_command(&self, container: Option<String>, config: &ProjectConfig) -> String {
-        "docker run --rm -it -p 26657:26657 -p 1317:1317 -p 9090:9090 -p 9091 reyth3/sei-localnet"
-            .to_owned()
+        format!("docker run -it -p 9091:9091 -p 26657:26657 -p 26656:26656 -p 1317:1317 -p 5000:5000 -v {0}:/root/code --name {1} ghcr.io/scrtlabs/localsecret:v1.5.1",
+            std::env::current_dir().unwrap().to_str().unwrap(), 
+            container.clone().unwrap_or_else(|| config.tests.test_container_name.clone())
+        )
     }
 
     fn network_params(&self, network_config: &NetworkConfig) -> Network {
         match network_config {
             NetworkConfig::Mainnet => Network {
                 profile: self.get_profile_name(),
-                chain_id: "pacific-1".to_owned(),
-                rpc_url: "https://rpc.sei-apis.com".to_owned(),
-                denom: "usei".to_owned(),
-                gas_prices: Some("0.08usei".to_owned()),
+                chain_id: "injective-1".to_owned(),
+                rpc_url: "https://sentry.tm.injective.network:443".to_owned(),
+                denom: "inj".to_owned(),
+                gas_prices: Some("0.002inj".to_owned()),
             },
             NetworkConfig::Testnet => Network {
                 profile: self.get_profile_name(),
-                chain_id: "atlantic-2".to_owned(),
-                rpc_url: "https://rpc.atlantic-2.seinetwork.io".to_owned(),
-                denom: "usei".to_owned(),
-                gas_prices: Some("0.09usei".to_owned()),
+                chain_id: "injective-888".to_owned(),
+                rpc_url: "https://testnet.sentry.tm.injective.network:443".to_owned(),
+                denom: "inj".to_owned(),
+                gas_prices: Some("0.0002inj".to_owned()),
             },
             NetworkConfig::Local => Network {
                 profile: self.get_profile_name(),
-                chain_id: "sei-1".to_owned(),
+                chain_id: "injective-1".to_owned(),
                 rpc_url: "http://localhost:26657".to_owned(), // TODO: Add local node URL
-                denom: "usei".to_owned(),
-                gas_prices: Some("0.00025usei".to_owned()),
+                denom: "inj".to_owned(),
+                gas_prices: Some("0inj".to_owned()),
             },
         }
     }
 
     fn get_initialized_address(&self, tx: &TxQueryResponse) -> String {
-        let event = tx.logs.first().unwrap().events.get(0).unwrap();
-        event.attributes.get(0).unwrap().value.clone()
+        tx.logs.first().unwrap().events.get(1).unwrap().attributes.get(0).unwrap().value.clone()
     }
 
     fn init_frontend(&self, dir: &PathBuf) -> Result<(), WarpError> {
-        let mut cmd = Command::new("git")
-            .arg("clone")
-            .arg("https://github.com/xion-warp/frontend")
-            .current_dir(dir)
-            .stdout(Stdio::null())
-            .spawn()?;
-        let cmd = cmd.wait()?;
-        if !cmd.success() {
-            return Err(WarpError::InitFailed);
-        }
-        println!(
-            "{} - run: {}",
-            "Frontend initialized.",
-            "yarn && yarn dev".bright_yellow()
-        );
-
-        Ok(())
+        todo!();
+        // let mut cmd = Command::new("git")
+        //     .arg("clone")
+        //     .arg("https://github.com/xion-warp/frontend")
+        //     .current_dir(dir)
+        //     .stdout(Stdio::null())
+        //     .spawn()?;
+        // let cmd = cmd.wait()?;
+        // if !cmd.success() {
+        //     return Err(WarpError::InitFailed);
+        // }
+        // println!("{} - run: {}", "Frontend initialized.", "yarn && yarn dev".bright_yellow());
+        // Ok(())
     }
 }

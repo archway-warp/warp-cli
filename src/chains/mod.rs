@@ -3,3 +3,4 @@ pub mod chain_profile;
 pub mod xion;
 pub mod secret;
 pub mod sei;
+pub mod injective;
